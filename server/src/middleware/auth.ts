@@ -18,7 +18,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   }
   try {
     const payload = jwt.verify(token, JWT_SECRET) as JwtPayload
-    ;(req as Request & { user: JwtPayload }).user = payload
+    req.user = payload
     next()
   } catch {
     res.status(401).json({ error: 'Token non valido' })

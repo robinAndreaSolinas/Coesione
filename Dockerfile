@@ -9,6 +9,8 @@ RUN npm run build-only
 
 FROM node:22-alpine AS backend
 
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 COPY server/package.json server/package-lock.json* ./
 RUN npm install
@@ -16,6 +18,8 @@ COPY server/ .
 RUN npm run build
 
 FROM node:22-alpine
+
+RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 COPY --from=backend /app/package.json /app/package-lock.json* ./

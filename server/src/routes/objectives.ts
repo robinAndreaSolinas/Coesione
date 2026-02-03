@@ -1,12 +1,12 @@
+import type { Request, Response, NextFunction } from 'express'
 import { Router } from 'express'
 import { db } from '../db/index.js'
 import { requireAuth } from '../middleware/auth.js'
-import type { JwtPayload } from '../middleware/auth.js'
 
 const router = Router()
 
-function checkEditorOrAdmin(req: { user: JwtPayload }, res: { status: (n: number) => { json: (o: object) => void } }, next: () => void) {
-  const { userId } = req.user
+function checkEditorOrAdmin(req: Request, res: Response, next: NextFunction) {
+  const userId = req.user?.userId
   const row = db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as { role: string } | undefined
   if (!row || !['Admin', 'Editor'].includes(row.role)) {
     res.status(403).json({ error: 'Solo Admin e Editor possono modificare gli obiettivi' })
@@ -30,8 +30,8 @@ router.get('/', (_req, res) => {
 router.put('/:id', requireAuth, checkEditorOrAdmin, (req, res) => {
   const { id } = req.params
   const { value, unit } = req.body
-  const { userId } = (req as { user: JwtPayload }).user
-  const userRow = db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as { role: string }
+  const userId = req.user?.userId
+  const userRow = userId ? db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as { role: string } : null
   const isAdmin = userRow?.role === 'Admin'
 
   const row = db.prepare('SELECT id, unit FROM objectives WHERE id = ?').get(id) as { id: string; unit: string } | undefined

@@ -37,4 +37,4 @@ package-lock.json
 server/data/
 server/node_modules/
 
-docker-compose.yml
+docker-compose.*

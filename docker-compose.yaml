@@ -1,0 +1,26 @@
+services:
+  coesione:
+    build: .
+    container_name: coesione
+    volumes:
+      - ./server/data:/app/data
+    environment:
+      - PORT=3001
+    networks:
+      - proxynet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.coesione.rule=Host(`dev-coesione.robinweb.it`)"
+      - "traefik.http.routers.coesione.entrypoints=https"
+      - "traefik.http.routers.coesione.tls=true"
+      # - "traefik.http.routers.coesione.tls.certresolver=cloudflare"
+      - "traefik.http.services.coesione.loadbalancer.server.port=3001"
+      - "traefik.http.routers.coesione-http.rule=Host(`dev-coesione.robinweb.it`)"
+      - "traefik.http.routers.coesione-http.entrypoints=http"
+      - "traefik.http.routers.coesione-http.middlewares=https-redirect"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+    restart: unless-stopped
+
+networks:
+  proxynet:
+    external: true

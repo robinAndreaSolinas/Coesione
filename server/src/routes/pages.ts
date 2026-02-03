@@ -1,12 +1,12 @@
+import type { Request, Response, NextFunction } from 'express'
 import { Router } from 'express'
 import { db } from '../db/index.js'
 import { requireAuth } from '../middleware/auth.js'
-import type { JwtPayload } from '../middleware/auth.js'
 
 const router = Router()
 
-function checkAdmin(req: { user: JwtPayload }, res: { status: (n: number) => { json: (o: object) => void } }, next: () => void) {
-  const { userId } = req.user
+function checkAdmin(req: Request, res: Response, next: NextFunction) {
+  const userId = req.user?.userId
   const row = db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as { role: string } | undefined
   if (row?.role !== 'Admin') {
     res.status(403).json({ error: 'Solo gli admin possono modificare la visibilità' })

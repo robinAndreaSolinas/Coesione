@@ -2,14 +2,13 @@ import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { db } from '../db/index.js'
 import { requireAuth } from '../middleware/auth.js'
-import type { JwtPayload } from '../middleware/auth.js'
 
 const router = Router()
 
-function checkAdmin(req: { user: JwtPayload }, res: { status: (n: number) => { json: (o: object) => void } }, next: () => void) {
-  const { userId } = req.user
+function checkAdmin(req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) {
+  const userId = req.user?.userId
   const row = db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as { role: string } | undefined
-  if (row?.role !== 'Admin') {
+  if (!userId || row?.role !== 'Admin') {
     res.status(403).json({ error: 'Solo gli admin possono gestire gli utenti' })
     return
   }
@@ -17,7 +16,7 @@ function checkAdmin(req: { user: JwtPayload }, res: { status: (n: number) => { j
 }
 
 router.get('/', requireAuth, (req, res) => {
-  const { userId } = (req as { user: JwtPayload }).user
+  const userId = req.user?.userId
   const me = db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as { role: string } | undefined
   if (me?.role !== 'Admin') {
     res.status(403).json({ error: 'Accesso negato' })

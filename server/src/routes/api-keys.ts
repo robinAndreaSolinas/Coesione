@@ -1,8 +1,9 @@
+import type { Request, Response, NextFunction } from 'express'
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
-import type { JwtPayload } from '../middleware/auth.js'
 import { db } from '../db/index.js'
 import * as apiKeys from '../lib/api-keys.js'
+import type { ApiKeyType } from '../lib/api-keys.js'
 
 const router = Router()
 
@@ -11,8 +12,12 @@ router.use((_req, res, next) => {
   next()
 })
 
-function checkAdmin(req: { user: JwtPayload }, res: { status: (n: number) => { json: (o: object) => void } }, next: () => void) {
-  const { userId } = req.user
+function checkAdmin(req: Request, res: Response, next: NextFunction) {
+  const userId = req.user?.userId
+  if (!userId) {
+    res.status(401).json({ error: 'Non autenticato' })
+    return
+  }
   const row = db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as { role: string } | undefined
   if (row?.role !== 'Admin') {
     res.status(403).json({ error: 'Solo gli Admin possono gestire le API key' })
@@ -32,8 +37,8 @@ router.post('/', requireAuth, checkAdmin, (req, res) => {
     res.status(400).json({ error: 'Nome, fonte e key richiesti' })
     return
   }
-  const validTypes = ['jwt', 'api_key', 'secret_client', 'token_json']
-  const t = validTypes.includes(type) ? type : 'api_key'
+  const validTypes: ApiKeyType[] = ['jwt', 'api_key', 'secret_client', 'token_json']
+  const t: ApiKeyType = validTypes.includes(type) ? type : 'api_key'
   try {
     const entry = apiKeys.addApiKey(name, source.trim(), t, key)
     res.status(201).json({ hash: entry.hash, name: entry.name, source: entry.source, type: entry.type, createdAt: entry.createdAt })
@@ -45,10 +50,10 @@ router.post('/', requireAuth, checkAdmin, (req, res) => {
 router.put('/:hash', requireAuth, checkAdmin, (req, res) => {
   const { hash } = req.params
   const { name, source, type, key } = req.body
-  const data: { name?: string; source?: string; type?: string; key?: string | Record<string, unknown> } = {}
+  const data: { name?: string; source?: string; type?: ApiKeyType; key?: string | Record<string, unknown> } = {}
   if (name !== undefined) data.name = name
   if (source !== undefined) data.source = source
-  if (type !== undefined && ['jwt', 'api_key', 'secret_client', 'token_json'].includes(type)) data.type = type
+  if (type !== undefined && ['jwt', 'api_key', 'secret_client', 'token_json'].includes(type)) data.type = type as ApiKeyType
   if (key !== undefined && key !== null) data.key = key
   try {
     const updated = apiKeys.updateApiKey(hash, data)

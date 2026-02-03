@@ -30,7 +30,7 @@ router.post('/login', (req, res) => {
 })
 
 router.get('/me', requireAuth, (req, res) => {
-  const { userId } = (req as { user: JwtPayload }).user
+  const userId = req.user?.userId
   const row = db.prepare('SELECT id, name, email, active, role FROM users WHERE id = ?').get(userId) as
     | { id: string; name: string; email: string; active: number; role: string }
     | undefined
@@ -48,12 +48,12 @@ router.get('/me', requireAuth, (req, res) => {
 })
 
 router.patch('/me', requireAuth, (req, res) => {
-  const { userId } = (req as { user: JwtPayload }).user
+  const userId = req.user?.userId
   const { name, email, currentPassword, newPassword } = req.body
   const row = db.prepare('SELECT id, name, email, password_hash FROM users WHERE id = ?').get(userId) as
     | { id: string; name: string; email: string; password_hash: string }
     | undefined
-  if (!row) {
+  if (!row || !userId) {
     res.status(404).json({ error: 'Utente non trovato' })
     return
   }
