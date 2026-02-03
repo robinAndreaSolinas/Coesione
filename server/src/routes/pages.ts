@@ -7,6 +7,10 @@ const router = Router()
 
 function checkAdmin(req: Request, res: Response, next: NextFunction) {
   const userId = req.user?.userId
+  if (!userId) {
+    res.status(401).json({ error: 'Non autenticato' })
+    return
+  }
   const row = db.prepare('SELECT role FROM users WHERE id = ?').get(userId) as { role: string } | undefined
   if (row?.role !== 'Admin') {
     res.status(403).json({ error: 'Solo gli admin possono modificare la visibilità' })
