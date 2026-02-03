@@ -19,31 +19,10 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/">
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="dark:hidden"
-          src="/images/logo/logo.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="hidden dark:block"
-          src="/images/logo/logo-dark.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-else
-          src="/images/logo/logo-icon.svg"
-          alt="Logo"
-          width="32"
-          height="32"
-        />
-      </router-link>
+      <dashboard-logo
+        :show-text="isExpanded || isHovered || isMobileOpen"
+        text-class="text-base sm:text-lg"
+      />
     </div>
     <div
       class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar"
@@ -206,7 +185,6 @@
           </div>
         </div>
       </nav>
-      <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" />
     </div>
   </aside>
 </template>
@@ -217,21 +195,15 @@ import { useRoute } from "vue-router";
 
 import {
   GridIcon,
-  CalenderIcon,
-  UserCircleIcon,
   ChatIcon,
   MailIcon,
   DocsIcon,
   PieChartIcon,
-  ChevronDownIcon,
   HorizontalDots,
   PageIcon,
-  TableIcon,
-  ListIcon,
-  PlugInIcon,
+  SettingsIcon,
 } from "../../icons";
-import SidebarWidget from "./SidebarWidget.vue";
-import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
+import DashboardLogo from "./header/DashboardLogo.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
@@ -240,78 +212,20 @@ const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
 const menuGroups = [
   {
-    title: "Menu",
+    title: "Dashboard",
     items: [
-      {
-        icon: GridIcon,
-        name: "Dashboard",
-        subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-      },
-      {
-        icon: CalenderIcon,
-        name: "Calendar",
-        path: "/calendar",
-      },
-      {
-        icon: UserCircleIcon,
-        name: "User Profile",
-        path: "/profile",
-      },
-
-      {
-        name: "Forms",
-        icon: ListIcon,
-        subItems: [
-          { name: "Form Elements", path: "/form-elements", pro: false },
-        ],
-      },
-      {
-        name: "Tables",
-        icon: TableIcon,
-        subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-      },
-      {
-        name: "Pages",
-        icon: PageIcon,
-        subItems: [
-          { name: "Black Page", path: "/blank", pro: false },
-          { name: "404 Page", path: "/error-404", pro: false },
-        ],
-      },
+      { icon: GridIcon, name: "Totale", path: "/" },
+      { icon: ChatIcon, name: "Social", path: "/social" },
+      { icon: PieChartIcon, name: "Video", path: "/video" },
+      { icon: MailIcon, name: "Newsletter", path: "/newsletter" },
+      { icon: PageIcon, name: "Analitiche Siti", path: "/siti" },
+      { icon: DocsIcon, name: "Sondaggi", path: "/sondaggi" },
     ],
   },
   {
-    title: "Others",
+    title: "Admin",
     items: [
-      {
-        icon: PieChartIcon,
-        name: "Charts",
-        subItems: [
-          { name: "Line Chart", path: "/line-chart", pro: false },
-          { name: "Bar Chart", path: "/bar-chart", pro: false },
-        ],
-      },
-      {
-        icon: BoxCubeIcon,
-        name: "Ui Elements",
-        subItems: [
-          { name: "Alerts", path: "/alerts", pro: false },
-          { name: "Avatars", path: "/avatars", pro: false },
-          { name: "Badge", path: "/badge", pro: false },
-          { name: "Buttons", path: "/buttons", pro: false },
-          { name: "Images", path: "/images", pro: false },
-          { name: "Videos", path: "/videos", pro: false },
-        ],
-      },
-      {
-        icon: PlugInIcon,
-        name: "Authentication",
-        subItems: [
-          { name: "Signin", path: "/signin", pro: false },
-          { name: "Signup", path: "/signup", pro: false },
-        ],
-      },
-      // ... Add other menu items here
+      { icon: SettingsIcon, name: "Gestione Obiettivi", path: "/admin/goals" },
     ],
   },
 ];

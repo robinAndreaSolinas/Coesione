@@ -8,11 +8,51 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'Ecommerce',
-      component: () => import('../views/Ecommerce.vue'),
-      meta: {
-        title: 'eCommerce Dashboard',
-      },
+      name: 'Totale',
+      component: () => import('../views/Dashboard/Totale.vue'),
+      meta: { title: 'Totale' },
+    },
+    {
+      path: '/social',
+      name: 'Social',
+      component: () => import('../views/Dashboard/Social.vue'),
+      meta: { title: 'Analitiche Social' },
+    },
+    {
+      path: '/video',
+      name: 'Video',
+      component: () => import('../views/Dashboard/Video.vue'),
+      meta: { title: 'Analitiche Video' },
+    },
+    {
+      path: '/newsletter',
+      name: 'Newsletter',
+      component: () => import('../views/Dashboard/Newsletter.vue'),
+      meta: { title: 'Analitiche Newsletter' },
+    },
+    {
+      path: '/siti',
+      name: 'Siti',
+      component: () => import('../views/Dashboard/Siti.vue'),
+      meta: { title: 'Analitiche Siti' },
+    },
+    {
+      path: '/sondaggi',
+      name: 'Sondaggi',
+      component: () => import('../views/Dashboard/Sondaggi.vue'),
+      meta: { title: 'Analitiche Sondaggi' },
+    },
+    {
+      path: '/admin/goals',
+      name: 'GoalsAdmin',
+      component: () => import('../views/Admin/GoalsAdmin.vue'),
+      meta: { title: 'Gestione Obiettivi' },
+    },
+    {
+      path: '/admin/users',
+      name: 'UsersAdmin',
+      component: () => import('../views/Admin/UsersAdmin.vue'),
+      meta: { title: 'Gestione utenti' },
     },
     {
       path: '/calendar',
@@ -146,6 +186,6 @@ const router = createRouter({
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `Vue.js ${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
+  document.title = `${to.meta.title || 'Dashboard'} | Cohesion Analytics`
   next()
 })
