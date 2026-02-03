@@ -5,7 +5,8 @@ services:
       dockerfile: Dockerfile.client
     container_name: coesione-client
     depends_on:
-      - server
+      server:
+        condition: service_started
     networks:
       - default
       - proxynet
