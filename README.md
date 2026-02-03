@@ -24,6 +24,27 @@ Build produzione:
 npm run build
 ```
 
+### Docker
+
+Build e avvio con Docker (solo Node):
+
+```bash
+docker build -t cohesion-analytics .
+docker run -p 8080:3000 cohesion-analytics
+```
+
+Oppure con Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+La dashboard sarà disponibile su `http://localhost:8080`.
+
+### GitHub Actions
+
+La build dell'immagine Docker viene eseguita automaticamente su push e pull request verso `main` o `master`. Su push, l'immagine viene pubblicata su GitHub Container Registry (`ghcr.io`).
+
 ## Struttura del progetto
 
 ```
