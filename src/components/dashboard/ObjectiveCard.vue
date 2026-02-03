@@ -21,8 +21,8 @@
         <h3 class="mt-2 line-clamp-2 text-sm font-semibold leading-snug text-gray-800 dark:text-white/90">
           {{ objective.title }}
         </h3>
-        <p v-if="objective.goal" class="mt-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-          Target: {{ objective.goal }}
+        <p v-if="objective.value != null" class="mt-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+          Target: {{ formatGoal(objective.value, objective.unit) }}
         </p>
       </div>
       <svg
@@ -44,6 +44,13 @@ import type { Objective } from '@/composables/useObjectives'
 const props = defineProps<{
   objective: Objective
 }>()
+
+function formatGoal(value: number, unit: string): string {
+  if (unit === '%') return `${value}%`
+  if (unit === 'K') return `${value}K`
+  if (unit === 'M') return `${value}M`
+  return String(value)
+}
 
 const categoryLabels: Record<string, string> = {
   social: 'Social',

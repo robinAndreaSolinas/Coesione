@@ -3,24 +3,22 @@
     :class="[
       'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
       {
-        'lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
-        'lg:w-[90px]': !isExpanded && !isHovered,
+        'lg:w-[290px]': effectiveExpanded || isMobileOpen,
+        'lg:w-[90px]': !effectiveExpanded,
         'translate-x-0 w-[290px]': isMobileOpen,
         '-translate-x-full': !isMobileOpen,
         'lg:translate-x-0': true,
       },
     ]"
-    @mouseenter="!isExpanded && (isHovered = true)"
-    @mouseleave="isHovered = false"
   >
     <div
       :class="[
         'py-8 flex',
-        !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
+        !effectiveExpanded ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <dashboard-logo
-        :show-text="isExpanded || isHovered || isMobileOpen"
+          <dashboard-logo
+        :show-text="effectiveExpanded || isMobileOpen"
         text-class="text-base sm:text-lg"
       />
     </div>
@@ -29,16 +27,16 @@
     >
       <nav class="mb-6">
         <div class="flex flex-col gap-4">
-          <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
+          <div v-for="(menuGroup, groupIndex) in visibleMenuGroups" :key="groupIndex">
             <h2
               :class="[
                 'mb-4 text-xs uppercase flex leading-[20px] text-gray-400',
-                !isExpanded && !isHovered
+                !effectiveExpanded
                   ? 'lg:justify-center'
-                  : 'justify-start',
+                  : 'lg:justify-start',
               ]"
             >
-              <template v-if="isExpanded || isHovered || isMobileOpen">
+              <template v-if="effectiveExpanded || isMobileOpen">
                 {{ menuGroup.title }}
               </template>
               <HorizontalDots v-else />
@@ -69,12 +67,12 @@
                     <component :is="item.icon" />
                   </span>
                   <span
-                    v-if="isExpanded || isHovered || isMobileOpen"
+                    v-if="effectiveExpanded || isMobileOpen"
                     class="menu-item-text"
                     >{{ item.name }}</span
                   >
                   <ChevronDownIcon
-                    v-if="isExpanded || isHovered || isMobileOpen"
+                    v-if="effectiveExpanded || isMobileOpen"
                     :class="[
                       'ml-auto w-5 h-5 transition-transform duration-200',
                       {
@@ -121,7 +119,7 @@
                   <div
                     v-show="
                       isSubmenuOpen(groupIndex, index) &&
-                      (isExpanded || isHovered || isMobileOpen)
+                      (effectiveExpanded || isMobileOpen)
                     "
                   >
                     <ul class="mt-2 space-y-1 ml-9">
@@ -189,7 +187,7 @@
   </aside>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 
@@ -205,32 +203,71 @@ import {
 } from "../../icons";
 import DashboardLogo from "./header/DashboardLogo.vue";
 import { useSidebar } from "@/composables/useSidebar";
+import { useAuth } from "@/composables/useAuth";
+import { useAdminVisibility } from "@/composables/useAdminVisibility";
 
 const route = useRoute();
-
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
+const { isAuthenticated, currentUser } = useAuth();
+
+const effectiveExpanded = computed(
+  () => isAuthenticated.value && isExpanded.value
+);
+const { getSettings } = useAdminVisibility();
+
+const isEditorOrAdmin = computed(
+  () =>
+    currentUser.value?.role === "Admin" || currentUser.value?.role === "Editor"
+);
 
 const menuGroups = [
   {
     title: "Dashboard",
     items: [
-      { icon: GridIcon, name: "Totale", path: "/" },
-      { icon: ChatIcon, name: "Social", path: "/social" },
-      { icon: PieChartIcon, name: "Video", path: "/video" },
-      { icon: MailIcon, name: "Newsletter", path: "/newsletter" },
-      { icon: PageIcon, name: "Analitiche Siti", path: "/siti" },
-      { icon: DocsIcon, name: "Sondaggi", path: "/sondaggi" },
+      { icon: GridIcon, name: "Totale", path: "/", pageKey: "Totale" },
+      { icon: ChatIcon, name: "Social", path: "/social", pageKey: "Social" },
+      { icon: PieChartIcon, name: "Video", path: "/video", pageKey: "Video" },
+      { icon: MailIcon, name: "Newsletter", path: "/newsletter", pageKey: "Newsletter" },
+      { icon: PageIcon, name: "Analitiche Siti", path: "/siti", pageKey: "Siti" },
+      { icon: DocsIcon, name: "Sondaggi", path: "/sondaggi", pageKey: "Sondaggi" },
     ],
   },
   {
     title: "Admin",
     items: [
       { icon: SettingsIcon, name: "Gestione Obiettivi", path: "/admin/goals" },
+      { icon: SettingsIcon, name: "API Management", path: "/admin/api-management" },
     ],
   },
 ];
 
-const isActive = (path) => route.path === path;
+const visibleMenuGroups = computed(() => {
+  const dashboard = menuGroups[0];
+  const admin = menuGroups[1];
+
+  const visibleDashboardItems = dashboard.items.filter((item) => {
+    const s = getSettings(item.pageKey);
+    if (isAuthenticated.value) {
+      return s.isPublic || s.isVisibleForUsers || currentUser.value?.role === "Admin";
+    }
+    return s.isPublic;
+  });
+
+  const visibleAdminItems = admin.items.filter(() => isEditorOrAdmin.value);
+
+  const groups: typeof menuGroups = [];
+
+  if (visibleDashboardItems.length > 0) {
+    groups.push({ ...dashboard, items: visibleDashboardItems });
+  }
+  if (visibleAdminItems.length > 0) {
+    groups.push({ ...admin, items: visibleAdminItems });
+  }
+
+  return groups;
+});
+
+const isActive = (path: string) => route.path === path;
 
 const toggleSubmenu = (groupIndex, itemIndex) => {
   const key = `${groupIndex}-${itemIndex}`;
@@ -238,7 +275,7 @@ const toggleSubmenu = (groupIndex, itemIndex) => {
 };
 
 const isAnySubmenuRouteActive = computed(() => {
-  return menuGroups.some((group) =>
+  return visibleMenuGroups.value.some((group) =>
     group.items.some(
       (item) =>
         item.subItems && item.subItems.some((subItem) => isActive(subItem.path))
@@ -248,12 +285,11 @@ const isAnySubmenuRouteActive = computed(() => {
 
 const isSubmenuOpen = (groupIndex, itemIndex) => {
   const key = `${groupIndex}-${itemIndex}`;
+  const items = visibleMenuGroups.value[groupIndex]?.items ?? [];
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&
-      menuGroups[groupIndex].items[itemIndex].subItems?.some((subItem) =>
-        isActive(subItem.path)
-      ))
+      items[itemIndex]?.subItems?.some((subItem) => isActive(subItem.path)))
   );
 };
 

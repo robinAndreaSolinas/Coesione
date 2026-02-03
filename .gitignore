@@ -32,3 +32,9 @@ coverage
 
 .env
 package-lock.json
+
+# Backend
+server/data/
+server/node_modules/
+
+docker-compose.yml

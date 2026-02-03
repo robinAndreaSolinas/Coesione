@@ -1,5 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+const DASHBOARD_PAGES: Record<string, string> = {
+  '/': 'Totale',
+  '/social': 'Social',
+  '/video': 'Video',
+  '/newsletter': 'Newsletter',
+  '/siti': 'Siti',
+  '/sondaggi': 'Sondaggi',
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to, from, savedPosition) {
@@ -46,13 +55,19 @@ const router = createRouter({
       path: '/admin/goals',
       name: 'GoalsAdmin',
       component: () => import('../views/Admin/GoalsAdmin.vue'),
-      meta: { title: 'Gestione Obiettivi' },
+      meta: { title: 'Gestione Obiettivi', requiresEditorOrAdmin: true },
     },
     {
       path: '/admin/users',
       name: 'UsersAdmin',
       component: () => import('../views/Admin/UsersAdmin.vue'),
       meta: { title: 'Gestione utenti' },
+    },
+    {
+      path: '/admin/api-management',
+      name: 'ApiManagement',
+      component: () => import('../views/Admin/ApiManagement.vue'),
+      meta: { title: 'API Management' },
     },
     {
       path: '/calendar',
@@ -172,20 +187,65 @@ const router = createRouter({
         title: 'Signin',
       },
     },
-    {
-      path: '/signup',
-      name: 'Signup',
-      component: () => import('../views/Auth/Signup.vue'),
-      meta: {
-        title: 'Signup',
-      },
-    },
   ],
 })
 
 export default router
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   document.title = `${to.meta.title || 'Dashboard'} | Cohesion Analytics`
+  const token = localStorage.getItem('coesione-token')
+
+  if (to.path === '/signin') {
+    if (token) next({ path: '/' })
+    else next()
+    return
+  }
+
+  const pageKey = DASHBOARD_PAGES[to.path]
+  if (pageKey) {
+    try {
+      const res = await fetch(`/api/v1/pages/visibility/${pageKey}`)
+      const vis = await res.json()
+      if (vis.isPublic) {
+        next()
+        return
+      }
+      if (token) {
+        const { decodeToken } = await import('@/api/client')
+        const decoded = decodeToken()
+        const canAccess = vis.isPublic || vis.isVisibleForUsers || decoded?.role === 'Admin'
+        if (!canAccess) {
+          next({ path: '/' })
+          return
+        }
+      }
+    } catch {
+      next()
+      return
+    }
+    if (!token) {
+      next({ path: '/signin', query: { redirect: to.fullPath } })
+      return
+    }
+    next()
+    return
+  }
+
+  const authRequired = to.path.startsWith('/admin') || to.path === '/profile'
+  if (authRequired && !token) {
+    next({ path: '/signin', query: { redirect: to.fullPath } })
+    return
+  }
+
+  if (to.meta.requiresEditorOrAdmin && token) {
+    const { decodeToken } = await import('@/api/client')
+    const decoded = decodeToken()
+    if (!decoded?.role || !['Admin', 'Editor'].includes(decoded.role)) {
+      next({ path: '/' })
+      return
+    }
+  }
+
   next()
 })

@@ -1,27 +1,42 @@
 import { computed } from 'vue'
 import { useObjectives } from './useObjectives'
+import { useCategoryProgress } from './useCategoryProgress'
+
+function fmtGoal(v: number, u: string): string {
+  if (u === '%') return `${v}%`
+  if (u === 'K') return `${v}K`
+  if (u === 'M') return `${v}M`
+  return String(v)
+}
 
 export function useReportData() {
   const { objectives } = useObjectives()
+  const { progressByCategory } = useCategoryProgress()
 
   const reportSections = computed(() => {
-    const byCategory: Record<string, { title: string; metrics: { label: string; value: string; goal: string }[] }> = {}
+    const progressMap = Object.fromEntries(
+      progressByCategory.value.map((p) => [p.category, p.value])
+    )
+    const byCategory: Record<
+      string,
+      { title: string; metrics: { label: string; goal: string; progress: number }[] }
+    > = {}
     objectives.value.forEach((obj) => {
       const cat = obj.category
       if (!byCategory[cat]) {
         byCategory[cat] = { title: cat, metrics: [] }
       }
+      const progress = progressMap[cat] ?? 0
       byCategory[cat].metrics.push({
         label: obj.title,
-        value: '-',
-        goal: obj.goal,
+        goal: fmtGoal(obj.value, obj.unit),
+        progress,
       })
     })
-    return Object.values(byCategory).map((s) => ({
+    return Object.entries(byCategory).map(([cat, s]) => ({
       ...s,
       title: s.title.charAt(0).toUpperCase() + s.title.slice(1),
-      progress: 0,
-      targetLabel: '-',
+      categoryProgress: progressMap[cat] ?? 0,
     }))
   })
 

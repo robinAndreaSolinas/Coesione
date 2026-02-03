@@ -10,12 +10,26 @@ Dashboard analytics per il monitoraggio di obiettivi e metriche (social, video, 
 - TypeScript
 - Vite
 - ApexCharts
+- Backend: Node.js, Express, SQLite3, JWT
 
 ## Installazione
 
 ```bash
 npm install
-npm run dev
+cd server && npm install && cd ..
+```
+
+Sviluppo (frontend + backend):
+
+```bash
+npm run dev:all
+```
+
+Oppure in due terminali:
+
+```bash
+npm run dev        # Frontend (Vite, porta 5173)
+npm run dev:server # Backend (Express, porta 3001)
 ```
 
 Build produzione:
@@ -26,20 +40,16 @@ npm run build
 
 ### Docker
 
-Build e avvio con Docker (solo Node):
-
-```bash
-docker build -t cohesion-analytics .
-docker run -p 8080:3000 cohesion-analytics
-```
-
-Oppure con Docker Compose:
+Con Docker Compose (frontend + backend):
 
 ```bash
 docker compose up -d
 ```
 
-La dashboard sarà disponibile su `http://localhost:8080`.
+- Dashboard: `http://localhost:8080`
+- Nginx serve il frontend e inoltra `/api` al backend
+- Backend Express su porta 3001 (interno)
+- Volume `server-data` per DB SQLite e api-keys
 
 ### GitHub Actions
 
@@ -53,18 +63,20 @@ src/
 │   ├── dashboard/     # MetricCard, GoalProgress, ObjectiveCard, ObjectivePieChart, CategoryProgressCard
 │   ├── layout/       # AdminLayout, AppHeader, AppSidebar, UserMenu
 │   └── ...
+├── api/
+│   └── client.ts             # Client API (auth, users, pages, objectives, api-keys)
 ├── composables/
 │   ├── useObjectives.ts      # Obiettivi e target
 │   ├── useGoals.ts           # Goal per sezione
-│   ├── useUsers.ts           # Gestione utenti
-│   ├── useCurrentUser.ts     # Utente corrente
-│   ├── useAdminVisibility.ts # Visibilità dashboard (Pubblica/Privata, Visibile)
+│   ├── useUsers.ts           # Gestione utenti (API)
+│   ├── useAuth.ts            # Login, logout, utente corrente
+│   ├── useAdminVisibility.ts  # Visibilità dashboard (API)
 │   ├── useCategoryProgress.ts
 │   ├── useReportData.ts
 │   └── usePdfExport.ts
 ├── views/
 │   ├── Dashboard/    # Totale, Social, Video, Newsletter, Siti, Sondaggi
-│   └── Admin/        # GoalsAdmin, UsersAdmin
+│   └── Admin/        # GoalsAdmin, UsersAdmin, ApiManagement
 └── router/
 ```
 
@@ -100,11 +112,19 @@ src/
 ### Gestione obiettivi
 
 - **Admin → Obiettivi** (`/admin/goals`): modifica target per ogni obiettivo
-- Persistenza in `localStorage`
+- Persistenza in DB SQLite
+
+### API Management (solo Admin)
+
+- **API Management** (`/admin/api-management`): gestione external API key
+- Fonte obbligatoria (BigQuery, Google Analytics, Piano.io, Dailymotion, Airtable, YouTube, Meta, TikTok, ecc.)
+- Tipi: JWT, API key, Secret + Client, token.json
+- Chiavi salvate in modo sicuro sul server (hash SHA256, key mai inviata al client)
+- Conferma eliminazione con "ELIMINA [NOME]"
 
 ### Gestione utenti
 
-- **Account settings** (`/admin/users`): menu utente → Account settings
+- **Account settings** (`/admin/users`): solo Admin, menu utente → Account settings
 
 Funzionalità:
 
@@ -112,11 +132,11 @@ Funzionalità:
 - Switch **Attivo/Disattivo** per utente
 - **Ruoli**: Admin, Editor, Viewer
 - **Modifica**: pulsante ingranaggio o doppio click sulla riga per abilitare i campi
-- **Password**: campo visibile solo in modalità modifica
-- **Aggiungi utente**: pulsante in alto
+- **Password**: campo visibile solo in modalità modifica (vuoto = non cambiare)
+- **Aggiungi utente**: pulsante in alto, form con nome, email, password, ruolo
 - **Rimuovi**: icona cestino con conferma
 - Filtro ricerca e "Mostra solo attivi"
-- Persistenza in `localStorage`
+- **Nessuna registrazione**: gli utenti vengono creati solo da un Admin
 
 ### Barra admin (solo utenti Admin)
 
@@ -145,8 +165,15 @@ Visibile nelle dashboard (Totale, Social, Video, Newsletter, Siti, Sondaggi), so
 
 ## Persistenza
 
-- `localStorage` per: obiettivi, goal, utenti, utente corrente, visibilità admin
-- Nessun backend: dati solo locali
+- **Backend SQLite3**: utenti, visibilità pagine, obiettivi, autenticazione
+- **API key esterne**: salvate in modo sicuro sul server (hash SHA256, key mai inviata al client)
+- Vedi [docs/BACKEND.md](docs/BACKEND.md) per API e schema DB
+
+## Autenticazione
+
+- Login con email/password (JWT)
+- Utenti creati solo da Admin (nessuna registrazione pubblica)
+- Pagine dashboard: pubblica/privata per singola pagina (Admin)
 
 ## Convenzioni di sviluppo
 
@@ -165,3 +192,6 @@ _Questo README va aggiornato ad ogni modifica significativa al progetto._
 - Barra admin con switch Accesso e Visibilità
 - Profilo semplificato (iniziale, no foto)
 - Export PDF report completo
+- Obiettivi persistiti in DB
+- API Management: external API key con fonte, tipo (JWT, API key, Secret+Client, token.json), hash SHA256
+- Docker Compose con frontend e backend

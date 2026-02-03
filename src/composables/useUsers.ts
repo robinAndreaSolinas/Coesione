@@ -1,83 +1,54 @@
-import { ref, watch } from 'vue'
+import { ref, onMounted } from 'vue'
+import { api, type ApiUser } from '@/api/client'
 
-const STORAGE_KEY = 'coesione-users'
-
-export interface AppUser {
-  id: string
-  name: string
-  email: string
-  active: boolean
-  role: string
+export interface AppUser extends ApiUser {
   password?: string
 }
 
-const defaultUsers: AppUser[] = [
-  {
-    id: '1',
-    name: 'Andrea',
-    email: 'andrea@example.com',
-    active: true,
-    role: 'Admin',
-  },
-  {
-    id: '2',
-    name: 'Redazione',
-    email: 'redazione@example.com',
-    active: true,
-    role: 'Editor',
-  },
-  {
-    id: '3',
-    name: 'Marketing',
-    email: 'marketing@example.com',
-    active: false,
-    role: 'Viewer',
-  },
-]
-
-function loadUsers(): AppUser[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored) as AppUser[]
-      return parsed.length ? parsed : defaultUsers
-    }
-  } catch {
-    // ignore
-  }
-  return [...defaultUsers]
-}
-
-const users = ref<AppUser[]>(loadUsers())
-
-watch(
-  users,
-  (val) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(val))
-  },
-  { deep: true }
-)
+const users = ref<AppUser[]>([])
 
 export function useUsers() {
-  const addUser = () => {
-    const id = Date.now().toString()
-    users.value.push({
-      id,
-      name: 'Nuovo utente',
-      email: `user${id}@example.com`,
-      active: true,
-      role: 'Viewer',
-    })
+  async function loadUsers() {
+    try {
+      users.value = await api.users.list()
+    } catch {
+      users.value = []
+    }
   }
 
-  const removeUser = (id: string) => {
+  async function addUser(data: {
+    name: string
+    email: string
+    password: string
+    role?: string
+  }) {
+    const created = await api.users.create(data)
+    users.value.push(created)
+    return created
+  }
+
+  async function updateUser(
+    id: string,
+    data: Partial<AppUser> & { password?: string }
+  ) {
+    const updated = await api.users.update(id, data)
+    const idx = users.value.findIndex((u) => u.id === id)
+    if (idx >= 0) users.value[idx] = { ...users.value[idx], ...updated }
+    return updated
+  }
+
+  async function removeUser(id: string) {
+    await api.users.delete(id)
     users.value = users.value.filter((u) => u.id !== id)
   }
 
+  onMounted(loadUsers)
+
   return {
     users,
+    loadUsers,
     addUser,
+    updateUser,
     removeUser,
   }
 }
-

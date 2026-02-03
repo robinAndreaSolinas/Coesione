@@ -4,7 +4,7 @@
     <Backdrop />
     <div
       class="flex-1 transition-all duration-300 ease-in-out"
-      :class="[isExpanded || isHovered ? 'lg:ml-[290px]' : 'lg:ml-[90px]']"
+      :class="[effectiveExpanded ? 'lg:ml-[290px]' : 'lg:ml-[90px]']"
     >
       <app-header />
 
@@ -58,29 +58,31 @@
               <button
                 type="button"
                 role="switch"
-                :aria-checked="settings.isVisibleForUsers"
-                class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-warning-400 focus:ring-offset-2"
-                :class="
-                  settings.isVisibleForUsers
+                :aria-checked="settings.isPublic || settings.isVisibleForUsers"
+                class="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-warning-400 focus:ring-offset-2"
+                :class="[
+                  settings.isPublic || settings.isVisibleForUsers
                     ? 'bg-success-500 dark:bg-success-600'
-                    : 'bg-gray-200 dark:bg-gray-700'
-                "
-                @click="toggleVisible"
+                    : 'bg-gray-200 dark:bg-gray-700',
+                  settings.isPublic ? 'cursor-not-allowed opacity-80' : 'cursor-pointer',
+                ]"
+                :disabled="settings.isPublic"
+                @click="!settings.isPublic && toggleVisible()"
               >
                 <span
                   class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition"
-                  :class="settings.isVisibleForUsers ? 'translate-x-5' : 'translate-x-1'"
+                  :class="(settings.isPublic || settings.isVisibleForUsers) ? 'translate-x-5' : 'translate-x-1'"
                 />
               </button>
               <span
                 class="min-w-[4.5rem] text-xs font-medium"
                 :class="
-                  settings.isVisibleForUsers
+                  settings.isPublic || settings.isVisibleForUsers
                     ? 'text-success-700 dark:text-success-400'
                     : 'text-gray-600 dark:text-gray-400'
                 "
               >
-                {{ settings.isVisibleForUsers ? 'Sì' : 'No' }}
+                {{ settings.isPublic || settings.isVisibleForUsers ? 'Sì' : 'No' }}
               </span>
             </div>
           </div>
@@ -101,12 +103,16 @@ import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import Backdrop from './Backdrop.vue'
 import { useSidebar } from '@/composables/useSidebar'
-import { useCurrentUser } from '@/composables/useCurrentUser'
+import { useAuth } from '@/composables/useAuth'
 import { useAdminVisibility } from '@/composables/useAdminVisibility'
 
 const { isExpanded, isHovered } = useSidebar()
 const route = useRoute()
-const { currentUser } = useCurrentUser()
+const { isAuthenticated, currentUser } = useAuth()
+
+const effectiveExpanded = computed(
+  () => isAuthenticated.value && isExpanded.value
+)
 const { getSettings, setPublic, setVisibleForUsers } = useAdminVisibility()
 
 const isAdmin = computed(() => currentUser.value?.role === 'Admin')
