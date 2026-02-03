@@ -46,9 +46,8 @@ Con Docker Compose (frontend + backend):
 docker compose up -d
 ```
 
-- Dashboard: `http://localhost:8080`
-- Nginx serve il frontend e inoltra `/api` al backend
-- Backend Express su porta 3001 (interno)
+- App: `http://localhost:8080`
+- Node/Express serve frontend static e API
 - Volume `server-data` per DB SQLite e api-keys
 
 ### GitHub Actions

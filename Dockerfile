@@ -1,19 +1,28 @@
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS frontend
 
 WORKDIR /app
-
 COPY package.json package-lock.json* ./
 RUN npm install
-
 COPY . .
 ENV VITE_API_URL=/api/v1
 RUN npm run build-only
 
-FROM nginx:alpine
+FROM node:22-alpine AS backend
 
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+COPY server/package.json server/package-lock.json* ./
+RUN npm install
+COPY server/ .
+RUN npm run build
 
-EXPOSE 80
+FROM node:22-alpine
 
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /app
+COPY --from=backend /app/package.json /app/package-lock.json* ./
+RUN npm install --omit=dev
+COPY --from=backend /app/dist ./dist
+COPY --from=frontend /app/dist ./static
+
+EXPOSE 3001
+ENV PORT=3001
+CMD ["node", "dist/index.js"]
