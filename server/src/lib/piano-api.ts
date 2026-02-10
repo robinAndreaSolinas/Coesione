@@ -72,7 +72,8 @@ async function fetchPiano<T>(url: string, options?: FetchOptions): Promise<T> {
   if (!res.ok) {
     throw new Error(`Piano API error: ${res.status} ${res.statusText}`)
   }
-  return res.json()
+  const data = await res.json()
+  return data as T
 }
 
 export async function getActiveCampaigns(publisher: PianoPublisher): Promise<Campaign[]> {

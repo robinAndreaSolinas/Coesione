@@ -47,12 +47,21 @@ router.post('/', requireAuth, checkAdmin, (req, res) => {
 router.put('/:id', requireAuth, checkAdmin, (req, res) => {
   const { id } = req.params
   const { name, siteId, apiKey, baseUrl } = req.body
-  const data: { name?: string; siteId?: string; apiKey?: string; baseUrl?: string } = {}
+  const data: {
+    name?: string
+    siteId?: string
+    apiKey?: string
+    baseUrl?: publishers.PianoPublisher['baseUrl']
+  } = {}
   if (name !== undefined) data.name = name
   if (siteId !== undefined) data.siteId = siteId
   if (apiKey !== undefined) data.apiKey = apiKey
   if (baseUrl !== undefined) {
-    const validUrls = ['https://api-esp.piano.io', 'https://api-esp-eu.piano.io', 'http://sandbox-api-esp.piano.io']
+    const validUrls: publishers.PianoPublisher['baseUrl'][] = [
+      'https://api-esp.piano.io',
+      'https://api-esp-eu.piano.io',
+      'http://sandbox-api-esp.piano.io',
+    ]
     if (!validUrls.includes(baseUrl)) {
       res.status(400).json({ error: 'baseUrl non valido' })
       return
