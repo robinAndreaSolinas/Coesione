@@ -38,6 +38,22 @@ interface SubscribersResponse {
   }
 }
 
+interface FetchOptions {
+  headers?: Record<string, string>
+  method?: string
+  body?: string
+}
+
+declare const fetch: (
+  url: string,
+  options?: FetchOptions,
+) => Promise<{
+  ok: boolean
+  status: number
+  statusText: string
+  json(): Promise<unknown>
+}>
+
 export interface NewsletterMetrics {
   openRate: number
   clickRate: number
@@ -45,7 +61,7 @@ export interface NewsletterMetrics {
   subscribersActive: number
 }
 
-async function fetchPiano<T>(url: string, options?: RequestInit): Promise<T> {
+async function fetchPiano<T>(url: string, options?: FetchOptions): Promise<T> {
   const res = await fetch(url, {
     ...options,
     headers: {
