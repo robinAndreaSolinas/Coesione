@@ -5,7 +5,7 @@ import path from 'node:path'
 const DATA_DIR = path.join(process.cwd(), 'data')
 const KEYS_FILE = path.join(DATA_DIR, 'api-keys.json')
 
-export type ApiKeyType = 'jwt' | 'api_key' | 'secret_client' | 'token_json'
+export type ApiKeyType = 'jwt' | 'api_key' | 'secret_client' | 'token_json' | 'piano_esp'
 
 export type ApiKeyValue = string | Record<string, unknown>
 
@@ -46,11 +46,11 @@ function loadKeys(): ApiKeyEntry[] {
   const arr = loadKeysRaw()
   let needsSave = false
   const result = arr.map((k: Record<string, unknown>) => {
-    const type = k.type && ['jwt', 'api_key', 'secret_client', 'token_json'].includes(k.type as string)
+    const type = k.type && ['jwt', 'api_key', 'secret_client', 'token_json', 'piano_esp'].includes(k.type as string)
       ? (k.type as ApiKeyType)
       : DEFAULT_TYPE
     let key: ApiKeyValue = k.key as ApiKeyValue
-    if (typeof key === 'string' && (type === 'secret_client' || type === 'token_json')) {
+    if (typeof key === 'string' && (type === 'secret_client' || type === 'token_json' || type === 'piano_esp')) {
       try {
         key = JSON.parse(key) as Record<string, unknown>
       } catch {
@@ -93,7 +93,7 @@ export function listApiKeys(): ApiKeyEntry[] {
 }
 
 function normalizeKey(type: ApiKeyType, key: string | Record<string, unknown>): ApiKeyValue {
-  if (type === 'secret_client' || type === 'token_json') {
+  if (type === 'secret_client' || type === 'token_json' || type === 'piano_esp') {
     if (typeof key === 'object' && key !== null) return key
     if (typeof key === 'string') {
       try {

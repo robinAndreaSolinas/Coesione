@@ -4,10 +4,10 @@
     <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Social</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-        <metric-card label="Like" value="45.2K" :goal="goals.social.like" :trend="18" />
+        <metric-card label="Engagement rate (calcolato)" value="5%" :goal="goals.social.engagementRate" :trend="2" />
+        <metric-card label="Views" value="2.1M" :goal="goals.social.views" :trend="12" />
+        <metric-card label="Audience" value="520K" :goal="goals.social.audience" :trend="9" />
         <metric-card label="Condivisioni" value="12.8K" :goal="goals.social.condivisioni" :trend="22" />
-        <metric-card label="Commenti" value="3.4K" :goal="goals.social.commenti" :trend="-5" />
-        <metric-card label="Reach" value="124.5K" :goal="goals.social.reach" :trend="11" />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
@@ -29,7 +29,7 @@
       <div class="col-span-12">
         <analytics-chart
           title="Andamento engagement"
-          description="Like, condivisioni e commenti"
+          description="Engagement, condivisioni e commenti"
           :series="engagementSeries"
         />
       </div>
@@ -52,7 +52,8 @@ const chartSeries = computed(() => [
 ])
 
 const engagementSeries = computed(() => [
-  { name: 'Like', data: [30, 35, 32, 40, 45, 42, 48, 50, 55, 52, 58, 60] },
-  { name: 'Condivisioni', data: [8, 10, 9, 12, 14, 13, 15, 16, 18, 17, 20, 19] },
+  { name: 'Engagement rate %', data: [4.2, 4.5, 4.7, 5, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.8, 6] },
+  { name: 'Condivisioni (K)', data: [8, 10, 9, 12, 14, 13, 15, 16, 18, 17, 20, 19] },
+  { name: 'Commenti (K)', data: [3, 3.2, 3.1, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4, 4.1, 4.2] },
 ])
 </script>

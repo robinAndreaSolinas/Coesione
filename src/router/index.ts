@@ -67,7 +67,7 @@ const router = createRouter({
       path: '/admin/api-management',
       name: 'ApiManagement',
       component: () => import('../views/Admin/ApiManagement.vue'),
-      meta: { title: 'API Management' },
+      meta: { title: 'API Management', requiresAdmin: true },
     },
     {
       path: '/calendar',
@@ -242,6 +242,15 @@ router.beforeEach(async (to, _from, next) => {
     const { decodeToken } = await import('@/api/client')
     const decoded = decodeToken()
     if (!decoded?.role || !['Admin', 'Editor'].includes(decoded.role)) {
+      next({ path: '/' })
+      return
+    }
+  }
+
+  if (to.meta.requiresAdmin && token) {
+    const { decodeToken } = await import('@/api/client')
+    const decoded = decodeToken()
+    if (decoded?.role !== 'Admin') {
       next({ path: '/' })
       return
     }

@@ -37,7 +37,7 @@ router.post('/', requireAuth, checkAdmin, (req, res) => {
     res.status(400).json({ error: 'Nome, fonte e key richiesti' })
     return
   }
-  const validTypes: ApiKeyType[] = ['jwt', 'api_key', 'secret_client', 'token_json']
+  const validTypes: ApiKeyType[] = ['jwt', 'api_key', 'secret_client', 'token_json', 'piano_esp']
   const t: ApiKeyType = validTypes.includes(type) ? type : 'api_key'
   try {
     const entry = apiKeys.addApiKey(name, source.trim(), t, key)
@@ -53,7 +53,7 @@ router.put('/:hash', requireAuth, checkAdmin, (req, res) => {
   const data: { name?: string; source?: string; type?: ApiKeyType; key?: string | Record<string, unknown> } = {}
   if (name !== undefined) data.name = name
   if (source !== undefined) data.source = source
-  if (type !== undefined && ['jwt', 'api_key', 'secret_client', 'token_json'].includes(type)) data.type = type as ApiKeyType
+    if (type !== undefined && ['jwt', 'api_key', 'secret_client', 'token_json', 'piano_esp'].includes(type)) data.type = type as ApiKeyType
   if (key !== undefined && key !== null) data.key = key
   try {
     const updated = apiKeys.updateApiKey(hash, data)

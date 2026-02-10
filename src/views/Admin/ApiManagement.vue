@@ -88,14 +88,16 @@
                 <option value="api_key">API key</option>
                 <option value="secret_client">Secret + Client</option>
                 <option value="token_json">token.json</option>
+                <option value="piano_esp">Piano ESP</option>
               </select>
             </div>
             <div>
               <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">Fonte <span class="text-error-500">*</span></label>
               <select
                 v-model="newKey.source"
+                :disabled="newKey.type === 'piano_esp'"
                 required
-                class="h-9 w-full rounded-lg border border-gray-200 px-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                class="h-9 w-full rounded-lg border border-gray-200 px-2 text-sm dark:border-gray-700 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 autocomplete="off"
               >
                 <option value="">—</option>
@@ -155,7 +157,51 @@
                 />
               </div>
             </template>
-            <template v-else>
+            <template v-else-if="newKey.type === 'piano_esp'">
+              <div>
+                <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">Site ID <span class="text-error-500">*</span></label>
+                <input
+                  v-model="newKey.pianoSiteId"
+                  type="text"
+                  placeholder="es. 557"
+                  required
+                  name="x"
+                  class="h-9 w-full rounded-lg border border-gray-200 px-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                  autocomplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore
+                  data-bwignore
+                />
+              </div>
+              <div>
+                <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">API Key <span class="text-error-500">*</span></label>
+                <input
+                  v-model="newKey.pianoApiKey"
+                  type="text"
+                  placeholder="API Key Piano ESP"
+                  required
+                  name="x"
+                  class="h-9 w-full rounded-lg border border-gray-200 px-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                  autocomplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore
+                  data-bwignore
+                />
+              </div>
+              <div>
+                <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">Base URL <span class="text-error-500">*</span></label>
+                <select
+                  v-model="newKey.pianoBaseUrl"
+                  required
+                  class="h-9 w-full rounded-lg border border-gray-200 px-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <option value="https://api-esp.piano.io">Produzione US</option>
+                  <option value="https://api-esp-eu.piano.io">Produzione EU</option>
+                  <option value="http://sandbox-api-esp.piano.io">Sandbox</option>
+                </select>
+              </div>
+            </template>
+            <template v-else-if="newKey.type !== 'piano_esp'">
               <div :class="newKey.type === 'token_json' ? 'sm:col-span-2 lg:col-span-3' : 'sm:col-span-2'">
                 <label class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-400">{{ typeInputLabel(newKey.type) }}</label>
                 <input
@@ -329,6 +375,7 @@ const apiDocs = [
   { method: 'POST', path: '/api/v1/api-keys', auth: 'Admin', desc: 'Crea API key' },
   { method: 'PUT', path: '/api/v1/api-keys/:hash', auth: 'Admin', desc: 'Aggiorna API key' },
   { method: 'DELETE', path: '/api/v1/api-keys/:hash', auth: 'Admin', desc: 'Elimina API key' },
+  { method: 'GET', path: '/api/v1/newsletter/metrics', auth: '—', desc: 'Metriche newsletter aggregate' },
 ]
 
 const apiDocsCollapsed = ref(true)
@@ -357,11 +404,16 @@ const newKey = ref({
   clientId: '',
   clientSecret: '',
 })
-
 watch(() => newKey.value.type, () => {
   newKey.value.key = ''
   newKey.value.clientId = ''
   newKey.value.clientSecret = ''
+  newKey.value.pianoSiteId = ''
+  newKey.value.pianoApiKey = ''
+  newKey.value.pianoBaseUrl = 'https://api-esp.piano.io'
+  if (newKey.value.type === 'piano_esp') {
+    newKey.value.source = 'Piano.io'
+  }
 })
 
 function typeLabel(t?: ApiKeyType): string {
@@ -375,6 +427,7 @@ function typeInputLabel(t: ApiKeyType): string {
     api_key: 'API key',
     secret_client: '',
     token_json: 'Contenuto token.json',
+    piano_esp: '',
   }
   return map[t] ?? 'Valore'
 }
@@ -385,6 +438,7 @@ function typePlaceholder(t: ApiKeyType): string {
     api_key: 'sk-xxx...',
     secret_client: '',
     token_json: '{"type":"service_account",...}',
+    piano_esp: '',
   }
   return map[t] ?? 'Valore'
 }
@@ -419,7 +473,7 @@ async function loadKeys() {
 
 async function addKey() {
   keyError.value = ''
-  const { name, source, type, key, clientId, clientSecret } = newKey.value
+  const { name, source, type, key, clientId, clientSecret, pianoSiteId, pianoApiKey, pianoBaseUrl } = newKey.value
   const sourceVal = source || ''
   let payload: string | Record<string, unknown>
   if (type === 'secret_client') {
@@ -428,6 +482,16 @@ async function addKey() {
       return
     }
     payload = { client_id: clientId.trim(), client_secret: clientSecret.trim() }
+  } else if (type === 'piano_esp') {
+    if (!pianoSiteId?.trim() || !pianoApiKey?.trim() || !pianoBaseUrl) {
+      keyError.value = 'Site ID, API Key e Base URL richiesti'
+      return
+    }
+    payload = {
+      siteId: pianoSiteId.trim(),
+      apiKey: pianoApiKey.trim(),
+      baseUrl: pianoBaseUrl,
+    }
   } else if (type === 'token_json') {
     if (!key?.trim()) {
       keyError.value = 'Valore richiesto'
@@ -466,7 +530,17 @@ async function addKey() {
 function cancelAdd() {
   showAddForm.value = false
   keyError.value = ''
-  newKey.value = { name: '', source: '', type: 'api_key', key: '', clientId: '', clientSecret: '' }
+  newKey.value = {
+    name: '',
+    source: '',
+    type: 'api_key',
+    key: '',
+    clientId: '',
+    clientSecret: '',
+    pianoSiteId: '',
+    pianoApiKey: '',
+    pianoBaseUrl: 'https://api-esp.piano.io',
+  }
 }
 
 function openDeleteModal(hash: string, name: string) {
@@ -493,6 +567,51 @@ async function executeDelete() {
   } catch (e) {
     deleteError.value = e instanceof Error ? e.message : 'Errore'
   }
+}
+
+async function loadPublishers() {
+  if (!isAdmin.value) return
+  try {
+    publishers.value = await api.publishers.list()
+  } catch {
+    publishers.value = []
+  }
+}
+
+async function addPublisher() {
+  publisherError.value = ''
+  const { name, siteId, apiKey, baseUrl } = newPublisher.value
+  if (!name.trim() || !siteId.trim() || !apiKey.trim() || !baseUrl) {
+    publisherError.value = 'Tutti i campi sono richiesti'
+    return
+  }
+  try {
+    await api.publishers.create({ name: name.trim(), siteId: siteId.trim(), apiKey: apiKey.trim(), baseUrl })
+    cancelPublisher()
+    loadPublishers()
+  } catch (e) {
+    publisherError.value = e instanceof Error ? e.message : 'Errore'
+  }
+}
+
+function cancelPublisher() {
+  showPublisherForm.value = false
+  publisherError.value = ''
+  newPublisher.value = { name: '', siteId: '', apiKey: '', baseUrl: 'https://api-esp.piano.io' }
+}
+
+function openDeletePublisherModal(id: string, name: string) {
+  deletePublisherTarget.value = { id, name }
+  deletePublisherConfirmText.value = ''
+  deletePublisherError.value = ''
+  deletePublisherModalOpen.value = true
+}
+
+function closeDeletePublisherModal() {
+  deletePublisherModalOpen.value = false
+  deletePublisherTarget.value = null
+  deletePublisherConfirmText.value = ''
+  deletePublisherError.value = ''
 }
 
 onMounted(loadKeys)

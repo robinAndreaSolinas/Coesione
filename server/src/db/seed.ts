@@ -23,13 +23,35 @@ export function seed(db: Database.Database) {
   if (objCount.c > 0) return
 
   const objectives = [
-    { id: 'engagement-rate', title: 'Engagement rate (engage/reach)', category: 'social', path: '/social', value: 5, unit: '%' },
-    { id: 'utenti-unici', title: 'Utenti unici giornalieri', category: 'siti', path: '/siti', value: 50, unit: 'K' },
-    { id: 'audience-video', title: 'Audience video', category: 'video', path: '/video', value: 1, unit: 'M' },
-    { id: 'survey-newsletter', title: 'Survey newsletter', category: 'sondaggi', path: '/sondaggi', value: 10, unit: 'K' },
-    { id: 'articoli-pubblicati', title: 'Numero articoli pubblicati', category: 'siti', path: '/siti', value: 500, unit: '' },
-    { id: 'pagine-viste', title: 'Pagine viste', category: 'siti', path: '/siti', value: 1.5, unit: 'M' },
-    { id: 'newsletter-rate', title: 'Newsletter open rate e click rate', category: 'newsletter', path: '/newsletter', value: 45, unit: '%' },
+    // Newsletter
+    { id: 'newsletter-open-rate', title: 'Open rate (calcolato)', category: 'newsletter', path: '/newsletter', value: 0.4, unit: '%' },
+    { id: 'newsletter-click-rate', title: 'Click rate (calcolato)', category: 'newsletter', path: '/newsletter', value: 0.05, unit: '%' },
+    { id: 'newsletter-subscribers-total', title: 'Iscritti totali', category: 'newsletter', path: '/newsletter', value: 10_000, unit: 'K' },
+    { id: 'newsletter-subscribers-active', title: 'Iscritti attivi', category: 'newsletter', path: '/newsletter', value: 8_000, unit: 'K' },
+
+    // Siti
+    { id: 'articles-unique-users', title: 'Utenti unici articoli', category: 'siti', path: '/siti', value: 50_000, unit: 'K' },
+    { id: 'articles-pageviews', title: 'Pagine viste articoli', category: 'siti', path: '/siti', value: 1_500_000, unit: 'M' },
+    { id: 'articles-published-count', title: 'Numero articoli pubblicati', category: 'siti', path: '/siti', value: 500, unit: '' },
+
+    // Social
+    { id: 'social-engagement-rate', title: 'Engagement rate (calcolato)', category: 'social', path: '/social', value: 0.05, unit: '%' },
+    { id: 'social-views', title: 'Views', category: 'social', path: '/social', value: 2_000_000, unit: 'M' },
+    { id: 'social-audience', title: 'Audience', category: 'social', path: '/social', value: 500_000, unit: 'K' },
+    { id: 'social-shares', title: 'Condivisioni', category: 'social', path: '/social', value: 10_000, unit: 'K' },
+    { id: 'social-comments', title: 'Commenti', category: 'social', path: '/social', value: 5_000, unit: 'K' },
+    { id: 'social-reach', title: 'Reach', category: 'social', path: '/social', value: 3_000_000, unit: 'M' },
+
+    // Video
+    { id: 'video-audience', title: 'Audience', category: 'video', path: '/video', value: 200_000, unit: 'K' },
+    { id: 'video-minutes-watched', title: 'Minuti guardati', category: 'video', path: '/video', value: 1_000_000, unit: 'M' },
+    { id: 'video-completion-rate', title: 'Completion rate', category: 'video', path: '/video', value: 0.6, unit: '%' },
+
+    // Sondaggi
+    { id: 'surveys-count', title: 'Numero sondaggi', category: 'sondaggi', path: '/sondaggi', value: 10, unit: '' },
+    { id: 'surveys-total-responses', title: 'Risposte totali', category: 'sondaggi', path: '/sondaggi', value: 20_000, unit: 'K' },
+    { id: 'surveys-completion-rate', title: 'Completion rate', category: 'sondaggi', path: '/sondaggi', value: 0.5, unit: '%' },
+    { id: 'surveys-average-responses', title: 'Media risposte sondaggio', category: 'sondaggi', path: '/sondaggi', value: 50, unit: '' },
   ]
   const insertObj = db.prepare(
     'INSERT INTO objectives (id, title, category, path, value, unit) VALUES (?, ?, ?, ?, ?, ?)'

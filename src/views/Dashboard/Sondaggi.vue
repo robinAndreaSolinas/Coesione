@@ -4,8 +4,8 @@
     <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Sondaggi</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-        <metric-card label="Sondaggi attivi" value="12" :goal="goals.sondaggi.sondaggiAttivi" :trend="0" />
-        <metric-card label="Risposte totali" value="8.4K" :goal="goals.sondaggi.risposte" :trend="28" />
+        <metric-card label="Numero sondaggi" value="12" :goal="goals.sondaggi.numeroSondaggi" :trend="0" />
+        <metric-card label="Risposte totali" value="8.4K" :goal="goals.sondaggi.risposteTotali" :trend="28" />
         <metric-card label="Completion rate" value="76%" :goal="goals.sondaggi.completionRate" :trend="6" />
         <metric-card label="Media risposte/sondaggio" value="700" :goal="goals.sondaggi.mediaRisposte" :trend="15" />
       </div>

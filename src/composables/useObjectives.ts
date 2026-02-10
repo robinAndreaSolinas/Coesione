@@ -12,11 +12,26 @@ export interface Objective {
 
 const objectives = ref<Objective[]>([])
 
+function normalizeValue(value: number, unit: string): number {
+  if (unit === '%') return value / 100
+  if (unit === 'K') return value * 1_000
+  if (unit === 'M') return value * 1_000_000
+  return value
+}
+
+function denormalizeValue(value: number, unit: string): number {
+  if (unit === '%') return value * 100
+  if (unit === 'K') return value / 1_000
+  if (unit === 'M') return value / 1_000_000
+  return value
+}
+
 function formatGoal(value: number, unit: string): string {
-  if (unit === '%') return `${value}%`
-  if (unit === 'K') return `${value}K`
-  if (unit === 'M') return `${value}M`
-  return String(value)
+  const display = denormalizeValue(value, unit)
+  if (unit === '%') return `${display}%`
+  if (unit === 'K') return `${display}K`
+  if (unit === 'M') return `${display}M`
+  return String(display)
 }
 
 export function useObjectives() {
@@ -28,7 +43,8 @@ export function useObjectives() {
         title: r.title,
         category: r.category as Objective['category'],
         path: r.path,
-        value: r.value,
+        // value in API is normalizzato; in frontend lavoriamo col valore \"visuale\"
+        value: denormalizeValue(r.value, r.unit),
         unit: r.unit,
       }))
     } catch {
@@ -37,12 +53,13 @@ export function useObjectives() {
   }
 
   async function updateObjective(id: string, value: number, unit: string) {
-    const updated = await api.objectives.update(id, { value, unit })
+    const normalized = normalizeValue(value, unit)
+    const updated = await api.objectives.update(id, { value: normalized, unit })
     const idx = objectives.value.findIndex((o) => o.id === id)
     if (idx >= 0) {
       objectives.value[idx] = {
         ...objectives.value[idx],
-        value: updated.value,
+        value: denormalizeValue(updated.value, updated.unit),
         unit: updated.unit,
       }
     }

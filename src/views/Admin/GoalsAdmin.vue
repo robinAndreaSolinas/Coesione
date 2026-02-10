@@ -34,16 +34,19 @@
             <div class="w-20">
               <label class="mb-1 block text-xs text-gray-500">Tipo</label>
               <select
+                v-if="isAdmin"
                 :value="obj.unit"
-                :disabled="!isAdmin"
                 @change="onUnitChange(obj, ($event.target as HTMLSelectElement).value)"
-                class="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 disabled:cursor-not-allowed disabled:opacity-60"
+                class="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
               >
                 <option value="">—</option>
                 <option value="%">%</option>
                 <option value="K">K</option>
                 <option value="M">M</option>
               </select>
+              <span v-else class="flex h-10 items-center text-sm text-gray-700 dark:text-gray-300">
+                {{ obj.unit || '—' }}
+              </span>
             </div>
           </div>
         </div>
@@ -81,6 +84,18 @@ function categoryLabel(obj: Objective): string {
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
+function toBase(value: number, unit: string): number {
+  if (unit === 'K') return value * 1_000
+  if (unit === 'M') return value * 1_000_000
+  return value
+}
+
+function fromBase(base: number, unit: string): number {
+  if (unit === 'K') return base / 1_000
+  if (unit === 'M') return base / 1_000_000
+  return base
+}
+
 function onValueInput(obj: Objective, value: string) {
   const num = parseFloat(value)
   if (isNaN(num)) return
@@ -89,6 +104,9 @@ function onValueInput(obj: Objective, value: string) {
 }
 
 function onUnitChange(obj: Objective, unit: string) {
+  // converte il valore mantenendo la metrica assoluta
+  const base = toBase(obj.value, obj.unit)
+  obj.value = fromBase(base, unit)
   obj.unit = unit
   debouncedSave(obj)
 }

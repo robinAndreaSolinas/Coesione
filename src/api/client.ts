@@ -1,5 +1,44 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
 
+export interface ApiUser {
+  id: string
+  name: string
+  email: string
+  active: boolean
+  role: string
+}
+
+export type ApiKeyType = 'jwt' | 'api_key' | 'secret_client' | 'token_json' | 'piano_esp'
+
+export interface ApiKeyEntry {
+  hash: string
+  name: string
+  source: string
+  type: ApiKeyType
+  createdAt: number
+}
+
+export interface ApiObjective {
+  id: string
+  title: string
+  category: string
+  path: string
+  value: number
+  unit: string
+}
+
+export interface PageVisibility {
+  isPublic: boolean
+  isVisibleForUsers: boolean
+}
+
+export interface NewsletterMetrics {
+  openRate: number
+  clickRate: number
+  subscribersTotal: number
+  subscribersActive: number
+}
+
 function getToken(): string | null {
   return localStorage.getItem('coesione-token')
 }
@@ -76,36 +115,7 @@ export const api = {
         body: JSON.stringify(data),
       }),
   },
-}
-
-export interface ApiUser {
-  id: string
-  name: string
-  email: string
-  active: boolean
-  role: string
-}
-
-export type ApiKeyType = 'jwt' | 'api_key' | 'secret_client' | 'token_json'
-
-export interface ApiKeyEntry {
-  hash: string
-  name: string
-  source: string
-  type: ApiKeyType
-  createdAt: number
-}
-
-export interface ApiObjective {
-  id: string
-  title: string
-  category: string
-  path: string
-  value: number
-  unit: string
-}
-
-export interface PageVisibility {
-  isPublic: boolean
-  isVisibleForUsers: boolean
+  newsletter: {
+    getMetrics: () => request<NewsletterMetrics>('/newsletter/metrics'),
+  },
 }

@@ -236,7 +236,7 @@ const menuGroups = [
     title: "Admin",
     items: [
       { icon: SettingsIcon, name: "Gestione Obiettivi", path: "/admin/goals" },
-      { icon: SettingsIcon, name: "API Management", path: "/admin/api-management" },
+      { icon: SettingsIcon, name: "API Management", path: "/admin/api-management", adminOnly: true },
     ],
   },
 ];
@@ -253,7 +253,10 @@ const visibleMenuGroups = computed(() => {
     return s.isPublic;
   });
 
-  const visibleAdminItems = admin.items.filter(() => isEditorOrAdmin.value);
+  const visibleAdminItems = admin.items.filter((item) => {
+    if (item.adminOnly) return currentUser.value?.role === "Admin";
+    return isEditorOrAdmin.value;
+  });
 
   const groups: typeof menuGroups = [];
 

@@ -4,10 +4,9 @@
     <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Video</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-        <metric-card label="Visualizzazioni" value="892K" :goal="goals.video.visualizzazioni" :trend="24" />
-        <metric-card label="Minuti guardati" value="156K" :goal="goals.video.minuti" :trend="18" />
+        <metric-card label="Audience" value="210K" :goal="goals.video.audience" :trend="9" />
+        <metric-card label="Minuti guardati" value="1.1M" :goal="goals.video.minuti" :trend="18" />
         <metric-card label="Completion rate" value="68%" :goal="goals.video.completionRate" :trend="5" />
-        <metric-card label="Nuovi iscritti" value="2.4K" :goal="goals.video.iscritti" :trend="12" />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress

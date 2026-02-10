@@ -115,11 +115,15 @@ src/
 
 ### API Management (solo Admin)
 
-- **API Management** (`/admin/api-management`): gestione external API key
-- Fonte obbligatoria (BigQuery, Google Analytics, Piano.io, Dailymotion, Airtable, YouTube, Meta, TikTok, ecc.)
-- Tipi: JWT, API key, Secret + Client, token.json
-- Chiavi salvate in modo sicuro sul server (hash SHA256, key mai inviata al client)
-- Conferma eliminazione con "ELIMINA [NOME]"
+- **API Management** (`/admin/api-management`): gestione external API key e Piano ESP Publishers
+- **External API Key**: Fonte obbligatoria (BigQuery, Google Analytics, Piano.io, Dailymotion, Airtable, YouTube, Meta, TikTok, ecc.)
+  - Tipi: JWT, API key, Secret + Client, token.json
+  - Chiavi salvate in modo sicuro sul server (hash SHA256, key mai inviata al client)
+  - Conferma eliminazione con "ELIMINA [NOME]"
+- **Piano ESP Publishers**: Configurazione publisher per integrazione newsletter
+  - Gestione multipla publisher (nome, Site ID, API Key, Base URL)
+  - Supporto per Produzione US/EU e Sandbox
+  - Metriche aggregate da tutti i publisher configurati
 
 ### Gestione utenti
 
@@ -182,6 +186,34 @@ Visibile nelle dashboard (Totale, Social, Video, Newsletter, Siti, Sondaggi), so
 - Bootstrap solo per grid e utilities
 - Classi CSS semantiche in kebab-case
 
+## Testing
+
+Vedi [TESTING.md](TESTING.md) per la guida completa al testing dell'integrazione Piano ESP Newsletter.
+
+### Test rapido
+
+1. **Avvia il progetto:**
+   ```bash
+   npm run dev:all
+   ```
+
+2. **Configura un publisher:**
+   - Vai su `/admin/api-management`
+   - Aggiungi un Piano ESP Publisher con le tue credenziali
+
+3. **Verifica metriche:**
+   - Vai su `/newsletter`
+   - Le metriche dovrebbero essere caricate automaticamente
+
+4. **Test API backend:**
+   ```bash
+   # Ottieni JWT token dal browser dopo login
+   ./test-newsletter-api.sh YOUR_JWT_TOKEN
+   
+   # Oppure test diretto delle funzioni Piano API
+   cd server && npm run test:piano
+   ```
+
 ## Changelog
 
 _Questo README va aggiornato ad ogni modifica significativa al progetto._
@@ -193,4 +225,5 @@ _Questo README va aggiornato ad ogni modifica significativa al progetto._
 - Export PDF report completo
 - Obiettivi persistiti in DB
 - API Management: external API key con fonte, tipo (JWT, API key, Secret+Client, token.json), hash SHA256
+- **Integrazione Piano ESP Newsletter**: supporto multipli publisher, metriche aggregate (open rate, click rate, subscribers), gestione configurazione tramite UI Admin
 - Docker Compose con frontend e backend

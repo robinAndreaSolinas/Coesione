@@ -4,10 +4,9 @@
     <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Analitiche Siti</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-        <metric-card label="Pagine viste" value="1.2M" :goal="goals.siti.pagineViste" :trend="7" />
-        <metric-card label="Utenti unici" value="312K" :goal="goals.siti.utentiUnici" :trend="5" />
-        <metric-card label="Durata media" value="3m 42s" :goal="goals.siti.durataMedia" :trend="12" />
-        <metric-card label="Bounce rate" value="42%" :goal="goals.siti.bounceRate" :trend="-8" />
+        <metric-card label="Utenti unici articoli" value="52K" :goal="goals.siti.utentiUniciArticoli" :trend="5" />
+        <metric-card label="Pagine viste articoli" value="1.2M" :goal="goals.siti.pagineVisteArticoli" :trend="7" />
+        <metric-card label="Numero articoli pubblicati" value="480" :goal="goals.siti.articoliPubblicati" :trend="4" />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
