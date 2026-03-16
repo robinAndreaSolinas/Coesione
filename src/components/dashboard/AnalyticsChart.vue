@@ -10,10 +10,14 @@
         </p>
       </div>
     </div>
-    <div class="max-w-full overflow-x-auto custom-scrollbar">
-      <div class="-ml-4 min-w-[1000px] xl:min-w-full pl-2">
-        <VueApexCharts type="area" height="310" :options="chartOptions" :series="series" />
-      </div>
+    <div class="w-full">
+      <VueApexCharts
+        type="area"
+        height="310"
+        class="w-full"
+        :options="chartOptions"
+        :series="series"
+      />
     </div>
   </div>
 </template>
@@ -57,6 +61,8 @@ const chartOptions = computed(() => ({
     axisBorder: { show: false },
     axisTicks: { show: false },
   },
-  yaxis: { title: { style: { fontSize: '0px' } } },
+  yaxis: {
+    title: { style: { fontSize: '0px' } },
+  },
 }))
 </script>

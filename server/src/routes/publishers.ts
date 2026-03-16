@@ -46,7 +46,12 @@ router.post('/', requireAuth, checkAdmin, (req, res) => {
 
 router.put('/:id', requireAuth, checkAdmin, (req, res) => {
   const { id } = req.params
-  const { name, siteId, apiKey, baseUrl } = req.body
+  const { name, siteId, apiKey, baseUrl } = req.body as {
+    name?: string
+    siteId?: string
+    apiKey?: string
+    baseUrl?: string
+  }
   const data: {
     name?: string
     siteId?: string
@@ -62,11 +67,11 @@ router.put('/:id', requireAuth, checkAdmin, (req, res) => {
       'https://api-esp-eu.piano.io',
       'http://sandbox-api-esp.piano.io',
     ]
-    if (!validUrls.includes(baseUrl)) {
+    if (!validUrls.includes(baseUrl as publishers.PianoPublisher['baseUrl'])) {
       res.status(400).json({ error: 'baseUrl non valido' })
       return
     }
-    data.baseUrl = baseUrl
+    data.baseUrl = baseUrl as publishers.PianoPublisher['baseUrl']
   }
   try {
     const updated = publishers.updatePublisher(id, data)

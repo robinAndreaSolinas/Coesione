@@ -9,6 +9,8 @@ import pagesRoutes from './routes/pages.js'
 import objectivesRoutes from './routes/objectives.js'
 import apiKeysRoutes from './routes/api-keys.js'
 import newsletterRoutes from './routes/newsletter.js'
+import metricsRoutes from './routes/metrics.js'
+import siteRoutes from './routes/site.js'
 
 const app = express()
 const PORT = Number(process.env.PORT) || 3001
@@ -23,6 +25,8 @@ app.use('/api/v1/pages', pagesRoutes)
 app.use('/api/v1/objectives', objectivesRoutes)
 app.use('/api/v1/api-keys', apiKeysRoutes)
 app.use('/api/v1/newsletter', newsletterRoutes)
+app.use('/api/v1/metrics', metricsRoutes)
+app.use('/api/v1/site', siteRoutes)
 
 app.get('/api/v1/health', (_req, res) => res.json({ ok: true }))
 

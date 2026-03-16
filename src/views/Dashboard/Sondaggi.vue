@@ -4,10 +4,30 @@
     <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Sondaggi</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-        <metric-card label="Numero sondaggi" value="12" :goal="goals.sondaggi.numeroSondaggi" :trend="0" />
-        <metric-card label="Risposte totali" value="8.4K" :goal="goals.sondaggi.risposteTotali" :trend="28" />
-        <metric-card label="Completion rate" value="76%" :goal="goals.sondaggi.completionRate" :trend="6" />
-        <metric-card label="Media risposte/sondaggio" value="700" :goal="goals.sondaggi.mediaRisposte" :trend="15" />
+        <metric-card
+          label="Numero sondaggi"
+          value="N/A"
+          :goal="sondaggiGoals.numeroSondaggi"
+          :trend="null"
+        />
+        <metric-card
+          label="Risposte totali"
+          value="N/A"
+          :goal="sondaggiGoals.risposteTotali"
+          :trend="null"
+        />
+        <metric-card
+          label="Completion rate"
+          value="N/A"
+          :goal="sondaggiGoals.completionRate"
+          :trend="null"
+        />
+        <metric-card
+          label="Media risposte/sondaggio"
+          value="N/A"
+          :goal="sondaggiGoals.mediaRisposte"
+          :trend="null"
+        />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
@@ -40,6 +60,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useGoals } from '@/composables/useGoals'
+import { useObjectives } from '@/composables/useObjectives'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
@@ -47,6 +68,28 @@ import GoalProgress from '@/components/dashboard/GoalProgress.vue'
 import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 const { goals } = useGoals()
+const { objectives, formatGoal } = useObjectives()
+
+const sondaggiGoals = computed(() => {
+  const byId = new Map(
+    objectives.value
+      .filter((o) => o.category === 'sondaggi')
+      .map((o) => [o.id, o])
+  )
+
+  function goalFor(id: string, fallback: string): string {
+    const obj = byId.get(id)
+    if (!obj) return fallback
+    return formatGoal(obj.value, obj.unit)
+  }
+
+  return {
+    numeroSondaggi: goalFor('surveys-count', goals.value.sondaggi.numeroSondaggi),
+    risposteTotali: goalFor('surveys-total-responses', goals.value.sondaggi.risposteTotali),
+    completionRate: goalFor('surveys-completion-rate', goals.value.sondaggi.completionRate),
+    mediaRisposte: goalFor('surveys-average-responses', goals.value.sondaggi.mediaRisposte),
+  }
+})
 const chartSeries = computed(() => [
   { name: 'Risposte', data: [520, 580, 620, 650, 680, 720, 750, 780, 800, 820, 830, 840] },
 ])

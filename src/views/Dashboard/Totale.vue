@@ -14,6 +14,25 @@
         :objective="obj"
       />
     </div>
+    <div v-if="metricsForView.length" class="mt-8">
+      <h2 class="text-base font-semibold text-gray-800 dark:text-white/90">
+        Stato complessivo delle metriche
+      </h2>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Valori attuali rispetto agli obiettivi per le principali metriche di ogni area.
+      </p>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <metric-card
+          v-for="metric in metricsForView"
+          :key="`${metric.category}-${metric.key}`"
+          :label="metric.title"
+          :value="metric.currentLabel"
+          :goal="metric.goalLabel"
+          :progress-percent="metric.progress"
+          :icon-bg-class="metricIconBg(metric.category)"
+        />
+      </div>
+    </div>
     <div class="mt-8 space-y-6">
       <objective-pie-chart :data="progressByCategory" />
       <div>
@@ -39,12 +58,26 @@
 <script setup lang="ts">
 import { useObjectives } from '@/composables/useObjectives'
 import { useCategoryProgress } from '@/composables/useCategoryProgress'
+import { useMetrics } from '@/composables/useMetrics'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ObjectiveCard from '@/components/dashboard/ObjectiveCard.vue'
 import ObjectivePieChart from '@/components/dashboard/ObjectivePieChart.vue'
 import CategoryProgressCard from '@/components/dashboard/CategoryProgressCard.vue'
+import MetricCard from '@/components/dashboard/MetricCard.vue'
 
 const { objectives } = useObjectives()
 const { progressByCategory } = useCategoryProgress()
+const { metricsForView } = useMetrics()
+
+function metricIconBg(category: string) {
+  const map: Record<string, string> = {
+    social: 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400',
+    video: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
+    newsletter: 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400',
+    siti: 'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400',
+    sondaggi: 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400',
+  }
+  return map[category] || 'bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400'
+}
 </script>

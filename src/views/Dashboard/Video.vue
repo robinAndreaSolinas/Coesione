@@ -4,9 +4,24 @@
     <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Video</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-        <metric-card label="Audience" value="210K" :goal="goals.video.audience" :trend="9" />
-        <metric-card label="Minuti guardati" value="1.1M" :goal="goals.video.minuti" :trend="18" />
-        <metric-card label="Completion rate" value="68%" :goal="goals.video.completionRate" :trend="5" />
+        <metric-card
+          label="Audience"
+          value="N/A"
+          :goal="videoGoals.audience"
+          :trend="null"
+        />
+        <metric-card
+          label="Minuti guardati"
+          value="N/A"
+          :goal="videoGoals.minuti"
+          :trend="null"
+        />
+        <metric-card
+          label="Completion rate"
+          value="N/A"
+          :goal="videoGoals.completionRate"
+          :trend="null"
+        />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
@@ -39,6 +54,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useGoals } from '@/composables/useGoals'
+import { useObjectives } from '@/composables/useObjectives'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
@@ -46,6 +62,27 @@ import GoalProgress from '@/components/dashboard/GoalProgress.vue'
 import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 const { goals } = useGoals()
+const { objectives, formatGoal } = useObjectives()
+
+const videoGoals = computed(() => {
+  const byId = new Map(
+    objectives.value
+      .filter((o) => o.category === 'video')
+      .map((o) => [o.id, o])
+  )
+
+  function goalFor(id: string, fallback: string): string {
+    const obj = byId.get(id)
+    if (!obj) return fallback
+    return formatGoal(obj.value, obj.unit)
+  }
+
+  return {
+    audience: goalFor('video-audience', goals.value.video.audience),
+    minuti: goalFor('video-minutes-watched', goals.value.video.minuti),
+    completionRate: goalFor('video-completion-rate', goals.value.video.completionRate),
+  }
+})
 const chartSeries = computed(() => [
   { name: 'Visualizzazioni', data: [450, 520, 480, 600, 650, 700, 720, 750, 800, 820, 850, 892] },
 ])

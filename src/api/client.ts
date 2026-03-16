@@ -39,6 +39,35 @@ export interface NewsletterMetrics {
   subscribersActive: number
 }
 
+export interface NewsletterDailyPoint {
+  day: string
+  openRate: number
+  clickRate: number
+  subscribersTotal: number
+}
+
+export interface SiteDailyPoint {
+  publish_date: string
+  count_url: number
+  pageview: number
+}
+
+export interface SiteMetrics {
+  uniqueUsers: number
+  pageviews: number
+  articlesPublished: number
+  daily: SiteDailyPoint[]
+}
+
+export interface ApiMetricSummary {
+  category: string
+  key: string
+  title: string
+  unit: string
+  goal: number
+  current: number
+}
+
 function getToken(): string | null {
   return localStorage.getItem('coesione-token')
 }
@@ -117,5 +146,12 @@ export const api = {
   },
   newsletter: {
     getMetrics: () => request<NewsletterMetrics>('/newsletter/metrics'),
+    getDailyMetrics: () => request<NewsletterDailyPoint[]>('/newsletter/metrics/daily'),
+  },
+  site: {
+    getMetrics: () => request<SiteMetrics>('/site/metrics'),
+  },
+  metrics: {
+    summary: () => request<ApiMetricSummary[]>('/metrics/summary'),
   },
 }

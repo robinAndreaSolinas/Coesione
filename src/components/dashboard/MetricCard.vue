@@ -21,6 +21,12 @@
             / {{ goal }}
           </span>
         </h4>
+        <p
+          v-if="progressPercent != null"
+          class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+        >
+          {{ Math.round(progressPercent) }}% dell'obiettivo
+        </p>
       </div>
       <span
         v-if="trend != null"
@@ -68,5 +74,6 @@ defineProps<{
   trend?: number | null
   icon?: string
   iconBgClass?: string
+  progressPercent?: number | null
 }>()
 </script>

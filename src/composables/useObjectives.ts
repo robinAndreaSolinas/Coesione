@@ -16,6 +16,7 @@ function normalizeValue(value: number, unit: string): number {
   if (unit === '%') return value / 100
   if (unit === 'K') return value * 1_000
   if (unit === 'M') return value * 1_000_000
+  if (unit === '-') return value
   return value
 }
 
@@ -23,15 +24,17 @@ function denormalizeValue(value: number, unit: string): number {
   if (unit === '%') return value * 100
   if (unit === 'K') return value / 1_000
   if (unit === 'M') return value / 1_000_000
+  if (unit === '-') return value
   return value
 }
 
 function formatGoal(value: number, unit: string): string {
-  const display = denormalizeValue(value, unit)
-  if (unit === '%') return `${display}%`
-  if (unit === 'K') return `${display}K`
-  if (unit === 'M') return `${display}M`
-  return String(display)
+  // Qui `value` è già denormalizzato (valore \"visuale\")
+  if (unit === '%') return `${value}%`
+  if (unit === 'K') return `${value}K`
+  if (unit === 'M') return `${value}M`
+  if (unit === '-') return String(value)
+  return String(value)
 }
 
 export function useObjectives() {
