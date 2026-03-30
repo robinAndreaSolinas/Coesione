@@ -12,6 +12,8 @@
         v-for="obj in objectives"
         :key="obj.id"
         :objective="obj"
+        :current-label="metricByKeyObj[obj.id]?.currentLabel"
+        :target-label="metricByKeyObj[obj.id]?.goalLabel"
       />
     </div>
     <div v-if="metricsForView.length" class="mt-8">
@@ -56,6 +58,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useObjectives } from '@/composables/useObjectives'
 import { useCategoryProgress } from '@/composables/useCategoryProgress'
 import { useMetrics } from '@/composables/useMetrics'
@@ -69,6 +72,14 @@ import MetricCard from '@/components/dashboard/MetricCard.vue'
 const { objectives } = useObjectives()
 const { progressByCategory } = useCategoryProgress()
 const { metricsForView } = useMetrics()
+
+const metricByKeyObj = computed(() => {
+  const obj: Record<string, (typeof metricsForView.value)[number]> = {}
+  for (const metric of metricsForView.value) {
+    obj[metric.key] = metric
+  }
+  return obj
+})
 
 function metricIconBg(category: string) {
   const map: Record<string, string> = {

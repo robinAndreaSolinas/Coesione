@@ -59,6 +59,15 @@ export interface SiteMetrics {
   daily: SiteDailyPoint[]
 }
 
+export interface SocialSummaryData {
+  interactionsTotal: number
+  audienceTotal: number
+  viewsTotal: number
+  sharesTotal: number
+  commentsTotal: number
+  engagementRateTotalPercent: number
+}
+
 export interface ApiMetricSummary {
   category: string
   key: string
@@ -151,7 +160,10 @@ export const api = {
   site: {
     getMetrics: () => request<SiteMetrics>('/site/metrics'),
   },
+  social: {
+    summary: () => request<{ success: boolean; data: SocialSummaryData }>('/social/summary'),
+  },
   metrics: {
-    summary: () => request<ApiMetricSummary[]>('/metrics/summary'),
+    summary: () => request<ApiMetricSummary[]>('/metrics/summary2'),
   },
 }

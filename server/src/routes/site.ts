@@ -44,6 +44,21 @@ interface SiteMetricsPayload {
   daily: SiteStatsByDate[]
 }
 
+interface SiteUniqueUserByDate {
+  eventDate: string
+  uug: number
+}
+
+interface SiteUniqueUserResponse {
+  success: boolean
+  data?: {
+    month_avg?: number
+    by_date?: SiteUniqueUserByDate[]
+  }
+  error?: unknown
+  timestamp?: string
+}
+
 const router = Router()
 
 function getDateRange(): { start: string; end: string } {
@@ -84,6 +99,25 @@ router.get('/metrics', async (_req: Request, res: Response) => {
     }
 
     res.json(payload)
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : 'Errore' })
+  }
+})
+
+// Media mensile e andamento utenti unici.
+// Source: `GET /api/v1/site/unique-user` (FastAPI/Data API).
+router.get('/unique-user', async (_req: Request, res: Response) => {
+  try {
+    const { start, end } = getDateRange()
+    const path = `/api/v1/site/unique-user?from_date=${start}&to_date=${end}`
+    const resp = await fetchJson<SiteUniqueUserResponse>(path)
+
+    if (!resp?.success) {
+      res.status(502).json({ error: 'Risposta non valida dal data API' })
+      return
+    }
+
+    res.json(resp)
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : 'Errore' })
   }

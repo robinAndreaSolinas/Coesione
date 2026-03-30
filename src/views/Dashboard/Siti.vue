@@ -29,11 +29,11 @@
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
           title="Obiettivo traffico"
-          description="Target mensile utenti unici"
-          :progress="sitiCurrent.utentiUniciArticoli.progress ?? 0"
-          :target-percent="parseInt(goals.siti.targetPercent) || 100"
-          :target-label="goals.siti.target"
-          :current-label="sitiCurrent.utentiUniciArticoli.value"
+          description="Target mensile pagine viste"
+          :progress="Math.round(sitiCurrent.pagineVisteArticoli.progress ?? 0)"
+          :target-percent="100"
+          :target-label="sitiGoals.pagineVisteArticoli"
+          :current-label="sitiCurrent.pagineVisteArticoli.value"
           progress-text="Buon traffico. Continua così per raggiungere l'obiettivo."
         />
       </div>
@@ -41,6 +41,7 @@
         <analytics-chart
           title="Utenti unici mensili"
           :series="chartSeries"
+          :categories="uniqueUserCategories"
         />
       </div>
       <div class="col-span-12">
@@ -48,6 +49,7 @@
           title="Traffico sito"
           description="Pagine viste e utenti unici"
           :series="trafficSeries"
+          :categories="uniqueUserCategories"
         />
       </div>
     </div>
@@ -67,9 +69,10 @@ import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
-const { uniqueUsers, pageviews, articlesPublished } = useSiteMetrics()
+const { pageviews, articlesPublished, dailyPoints } = useSiteMetrics()
 
 const uniqueUsersMonthAvg = ref(0)
+const uniqueUsersByMonth = ref<Array<{ eventDate: string; uug: number }>>([])
 
 onMounted(async () => {
   try {
@@ -85,11 +88,19 @@ onMounted(async () => {
     const data = await res.json()
     if (data?.success && data.data?.month_avg != null) {
       uniqueUsersMonthAvg.value = Number(data.data.month_avg) || 0
+      uniqueUsersByMonth.value = Array.isArray(data.data.by_date)
+        ? data.data.by_date.map((r: { eventDate?: string; uug?: number }) => ({
+            eventDate: String(r.eventDate ?? ''),
+            uug: Number(r.uug ?? 0),
+          }))
+        : []
     } else {
       uniqueUsersMonthAvg.value = 0
+      uniqueUsersByMonth.value = []
     }
   } catch {
     uniqueUsersMonthAvg.value = 0
+    uniqueUsersByMonth.value = []
   }
 })
 
@@ -100,18 +111,27 @@ function denormalizeSiteValue(value: number, unit: string): number {
   return value
 }
 
-function formatSiteValue(value: number, unit: string): string {
-  const denorm = denormalizeSiteValue(value, unit)
-  const rounded = Math.round(denorm * 100) / 100
-  // Se il valore è troppo piccolo rispetto all'unità (es. 0.001M),
-  // mostra il valore grezzo per evitare che diventi 0M.
-  if ((unit === 'K' || unit === 'M') && rounded === 0 && value !== 0) {
-    const rawRounded = Math.round(value * 100) / 100
-    return String(rawRounded)
-  }
+function denormalizeUniqueUsersValue(rawUugInK: number, unit: string): number {
+  // Adatta i dati in base all'unità dell'obiettivo:
+  // - unit K => migliaia
+  // - unit M => milioni
+  if (unit === 'K') return rawUugInK / 1_000
+  if (unit === 'M') return rawUugInK / 1_000_000
+  if (unit === '%') return rawUugInK * 100
+  return rawUugInK
+}
+
+function formatDenormalized(value: number, unit: string): string {
+  const rounded = Math.round(value * 100) / 100
   if (unit === '%') return `${rounded}%`
-  if (unit === 'K') return `${rounded}K`
-  if (unit === 'M') return `${rounded}M`
+  if (unit === 'K') {
+    if (rounded === 0 && value !== 0) return `${value.toFixed(2)}K`
+    return `${rounded}K`
+  }
+  if (unit === 'M') {
+    if (rounded === 0 && value !== 0) return `${value.toFixed(2)}M`
+    return `${rounded}M`
+  }
   return String(rounded)
 }
 
@@ -139,9 +159,19 @@ const sitiCurrent = computed(() => {
   function currentFor(id: string, raw: number) {
     const obj = objectives.value.find((o) => o.id === id)
     const unit = obj?.unit ?? ''
+    const goalVisual = obj?.value ?? 0
+
+    const currentVisual =
+      id === 'articles-unique-users'
+        ? denormalizeUniqueUsersValue(raw, unit)
+        : denormalizeSiteValue(raw, unit)
+
+    const progressRaw = goalVisual > 0 ? (currentVisual / goalVisual) * 100 : 0
+    const progress = Math.max(0, Math.min(progressRaw, 999))
+
     return {
-      value: formatSiteValue(raw, unit),
-      progress: 0,
+      value: formatDenormalized(currentVisual, unit),
+      progress,
     }
   }
 
@@ -152,13 +182,40 @@ const sitiCurrent = computed(() => {
   }
 })
 
+const uniqueUserCategories = computed(() => uniqueUsersByMonth.value.map((p) => p.eventDate))
+
+const uniqueUsersUnit = computed(
+  () => objectives.value.find((o) => o.id === 'articles-unique-users')?.unit ?? ''
+)
+
 const chartSeries = computed(() => [
-  // Per ora usiamo un'unica serie basata sulle pageview totali come placeholder numerico reale
-  { name: 'Pagine viste (totale periodo)', data: [pageviews.value] },
+  {
+    name: 'Utenti unici',
+    data: uniqueUsersByMonth.value.map((p) => denormalizeUniqueUsersValue(p.uug, uniqueUsersUnit.value)),
+  },
 ])
 
-const trafficSeries = computed(() => [
-  { name: 'Pagine viste', data: [pageviews.value] },
-  { name: 'Utenti unici (media mese)', data: [uniqueUsersMonthAvg.value] },
-])
+const pageviewsByMonth = computed(() => {
+  const m = new Map<string, number>()
+  for (const p of dailyPoints.value) {
+    const key = String(p.publish_date).slice(0, 7) // YYYY-MM
+    m.set(key, (m.get(key) ?? 0) + Number(p.pageview ?? 0))
+  }
+  return m
+})
+
+const trafficSeries = computed(() => {
+  return [
+    {
+      name: 'Pagine viste',
+      data: uniqueUserCategories.value.map(
+        (month) => denormalizeSiteValue(pageviewsByMonth.value.get(month) ?? 0, objectives.value.find((o) => o.id === 'articles-pageviews')?.unit ?? '')
+      ),
+    },
+    {
+      name: 'Utenti unici (media mese)',
+      data: uniqueUsersByMonth.value.map((p) => denormalizeUniqueUsersValue(p.uug, uniqueUsersUnit.value)),
+    },
+  ]
+})
 </script>

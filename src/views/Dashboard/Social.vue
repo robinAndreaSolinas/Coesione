@@ -6,25 +6,25 @@
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
         <metric-card
           label="Engagement rate (calcolato)"
-          value="N/A"
+          :value="socialCurrent.engagementRate"
           :goal="socialGoals.engagementRate"
           :trend="null"
         />
         <metric-card
           label="Views"
-          value="N/A"
+          :value="socialCurrent.views"
           :goal="socialGoals.views"
           :trend="null"
         />
         <metric-card
           label="Audience"
-          value="N/A"
+          :value="socialCurrent.audience"
           :goal="socialGoals.audience"
           :trend="null"
         />
         <metric-card
           label="Condivisioni"
-          value="N/A"
+          :value="socialCurrent.condivisioni"
           :goal="socialGoals.condivisioni"
           :trend="null"
         />
@@ -33,10 +33,10 @@
         <goal-progress
           title="Obiettivo engagement"
           description="Target mensile interazioni social"
-          :progress="85"
-          :target-percent="parseInt(goals.social.targetPercent) || 100"
-          :target-label="goals.social.target"
-          current-label="127.5K"
+          :progress="Math.round(socialProgressPercent)"
+          :target-percent="100"
+          :target-label="socialGoals.engagementRate"
+          :current-label="socialCurrent.engagementRateRawLabel"
           progress-text="Ottimo engagement! Raggiungerai l'obiettivo a fine mese."
         />
       </div>
@@ -44,6 +44,7 @@
         <analytics-chart
           title="Interazioni per mese"
           :series="chartSeries"
+          :categories="chartCategories"
         />
       </div>
       <div class="col-span-12">
@@ -51,6 +52,7 @@
           title="Andamento engagement"
           description="Engagement, condivisioni e commenti"
           :series="engagementSeries"
+          :categories="chartCategories"
         />
       </div>
     </div>
@@ -61,6 +63,7 @@
 import { computed } from 'vue'
 import { useGoals } from '@/composables/useGoals'
 import { useObjectives } from '@/composables/useObjectives'
+import { useSocialSummary } from '@/composables/useSocialSummary'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
@@ -90,13 +93,73 @@ const socialGoals = computed(() => {
     condivisioni: goalFor('social-shares', goals.value.social.condivisioni),
   }
 })
+
+function formatCompact(value: number, unit: string): string {
+  const rounded = Math.round(value * 100) / 100
+  if (unit === '%') return `${rounded}%`
+  if (unit === 'K') return `${rounded}K`
+  if (unit === 'M') return `${rounded}M`
+  return String(rounded)
+}
+
+function denormalizeForDisplay(raw: number, unit: string): number {
+  if (unit === 'K') return raw / 1_000
+  if (unit === 'M') return raw / 1_000_000
+  if (unit === '%') return raw
+  return raw
+}
+
+const chartCategories = computed(() => ['Totale'])
+
+const { interactionsTotal, audienceTotal, viewsTotal, sharesTotal, commentsTotal, engagementRateTotalPercent } =
+  useSocialSummary()
+
+const socialCurrent = computed(() => {
+  const engagementObj = objectives.value.find((o) => o.id === 'social-engagement-rate')
+  const viewsObj = objectives.value.find((o) => o.id === 'social-views')
+  const audienceObj = objectives.value.find((o) => o.id === 'social-audience')
+  const sharesObj = objectives.value.find((o) => o.id === 'social-shares')
+
+  const engagementUnit = engagementObj?.unit ?? '%'
+  const viewsUnit = viewsObj?.unit ?? 'M'
+  const audienceUnit = audienceObj?.unit ?? 'K'
+  const sharesUnit = sharesObj?.unit ?? 'K'
+
+  const engagementRateRawLabel = formatCompact(
+    denormalizeForDisplay(engagementRateTotalPercent.value, engagementUnit),
+    '%',
+  )
+
+  const engagementRate = formatCompact(engagementRateTotalPercent.value, '%')
+
+  const views = formatCompact(denormalizeForDisplay(viewsTotal.value, viewsUnit), viewsUnit)
+  const audience = formatCompact(denormalizeForDisplay(audienceTotal.value, audienceUnit), audienceUnit)
+  const condivisioni = formatCompact(denormalizeForDisplay(sharesTotal.value, sharesUnit), sharesUnit)
+
+  return {
+    engagementRate,
+    views,
+    audience,
+    condivisioni,
+    engagementRateRawLabel,
+  }
+})
+
+const socialProgressPercent = computed(() => {
+  const engagementObj = objectives.value.find((o) => o.id === 'social-engagement-rate')
+  const goalVisual = engagementObj?.value ?? 0 // gia' denormalizzato (unit % => valore in percent)
+  if (goalVisual <= 0) return 0
+  const progressRaw = (engagementRateTotalPercent.value / goalVisual) * 100
+  return Math.max(0, Math.min(progressRaw, 999))
+})
+
 const chartSeries = computed(() => [
-  { name: 'Interazioni', data: [85, 92, 78, 95, 110, 105, 120, 115, 130, 125, 140, 135] },
+  { name: 'Interazioni', data: [denormalizeForDisplay(interactionsTotal.value, 'K')] },
 ])
 
 const engagementSeries = computed(() => [
-  { name: 'Engagement rate %', data: [4.2, 4.5, 4.7, 5, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.8, 6] },
-  { name: 'Condivisioni (K)', data: [8, 10, 9, 12, 14, 13, 15, 16, 18, 17, 20, 19] },
-  { name: 'Commenti (K)', data: [3, 3.2, 3.1, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4, 4.1, 4.2] },
+  { name: 'Engagement rate %', data: [engagementRateTotalPercent.value] },
+  { name: 'Condivisioni (K)', data: [denormalizeForDisplay(sharesTotal.value, 'K')] },
+  { name: 'Commenti (K)', data: [denormalizeForDisplay(commentsTotal.value, 'K')] },
 ])
 </script>

@@ -18,12 +18,19 @@
         >
           {{ categoryLabel }}
         </span>
-        <h3 class="mt-2 line-clamp-2 text-sm font-semibold leading-snug text-gray-800 dark:text-white/90">
-          {{ objective.title }}
-        </h3>
-        <p v-if="objective.value != null" class="mt-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-          Target: {{ formatGoal(objective.value, objective.unit) }}
-        </p>
+        <div class="mt-2 flex items-start justify-between gap-4">
+          <h3 class="line-clamp-2 text-sm font-semibold leading-snug text-gray-800 dark:text-white/90">
+            {{ objective.title }}
+          </h3>
+          <div class="shrink-0 text-right">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Valore / Target
+            </div>
+            <div class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90">
+              {{ currentLabelComputed }} / {{ targetLabelComputed }}
+            </div>
+          </div>
+        </div>
       </div>
       <svg
         class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-500 dark:group-hover:text-brand-400"
@@ -43,6 +50,8 @@ import type { Objective } from '@/composables/useObjectives'
 
 const props = defineProps<{
   objective: Objective
+  currentLabel?: string | null
+  targetLabel?: string | null
 }>()
 
 function formatGoal(value: number, unit: string): string {
@@ -104,4 +113,9 @@ const iconPaths: Record<string, string> = {
 }
 
 const iconSvg = computed(() => iconPaths[props.objective.category] ?? iconPaths.social)
+
+const currentLabelComputed = computed(() => props.currentLabel ?? 'N/A')
+const targetLabelComputed = computed(
+  () => props.targetLabel ?? (props.objective.value != null ? formatGoal(props.objective.value, props.objective.unit) : 'N/A'),
+)
 </script>

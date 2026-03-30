@@ -200,7 +200,7 @@ async function getSiteAggregates(start: string, end: string): Promise<SiteAggreg
   }
 }
 
-router.get('/summary', async (_req: Request, res: Response) => {
+async function handleSummary(_req: Request, res: Response) {
   try {
     const { start, end } = getDateRange()
 
@@ -274,7 +274,10 @@ router.get('/summary', async (_req: Request, res: Response) => {
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : 'Errore' })
   }
-})
+}
+
+router.get('/summary', handleSummary)
+router.get('/summary2', handleSummary)
 
 export default router
 

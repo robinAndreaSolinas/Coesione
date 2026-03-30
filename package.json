@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:server": "cd server && npm run dev",
-    "dev:all": "run-p dev dev:server",
+    "dev:all": "set -a; . ./.env.local; set +a; run-p dev dev:server",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",

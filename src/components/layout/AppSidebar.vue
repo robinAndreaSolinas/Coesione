@@ -200,6 +200,7 @@ import {
   HorizontalDots,
   PageIcon,
   SettingsIcon,
+  ChevronDownIcon,
 } from "../../icons";
 import DashboardLogo from "./header/DashboardLogo.vue";
 import { useSidebar } from "@/composables/useSidebar";
