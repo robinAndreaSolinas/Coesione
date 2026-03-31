@@ -73,17 +73,19 @@ function denomForAudience(a: SocialAggregate): number {
 router.get('/summary', async (_req: Request, res: Response) => {
   const timeoutMs = 15000
   try {
-    const [fbResp, ytResp, igResp] = await Promise.all([
+    const [fbResp, ytResp, igResp, otherResp] = await Promise.all([
       fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/facebook/stats', timeoutMs).catch(() => null),
       fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/youtube/stats', timeoutMs).catch(() => null),
       fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/instagram/stats', timeoutMs).catch(() => null),
+      fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/other/stats', timeoutMs).catch(() => null),
     ])
 
     const fb = fbResp?.success ? (fbResp.data as SocialAggregate | null) : null
     const yt = ytResp?.success ? (ytResp.data as SocialAggregate | null) : null
     const ig = igResp?.success ? (igResp.data as SocialAggregate | null) : null
+    const other = otherResp?.success ? (otherResp.data as SocialAggregate | null) : null
 
-    const all: SocialAggregate[] = [fb, yt, ig].filter(Boolean) as SocialAggregate[]
+    const all: SocialAggregate[] = [fb, yt, ig, other].filter(Boolean) as SocialAggregate[]
 
     let interactionsTotal = 0
     let viewsTotal = 0
