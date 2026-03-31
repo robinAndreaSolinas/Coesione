@@ -6,25 +6,25 @@
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
         <metric-card
           label="Numero sondaggi"
-          value="N/A"
+          :value="sondaggiCurrent.numeroSondaggi"
           :goal="sondaggiGoals.numeroSondaggi"
           :trend="null"
         />
         <metric-card
           label="Risposte totali"
-          value="N/A"
+          :value="sondaggiCurrent.risposteTotali"
           :goal="sondaggiGoals.risposteTotali"
           :trend="null"
         />
         <metric-card
           label="Completion rate"
-          value="N/A"
+          :value="sondaggiCurrent.completionRate"
           :goal="sondaggiGoals.completionRate"
           :trend="null"
         />
         <metric-card
           label="Media risposte/sondaggio"
-          value="N/A"
+          :value="sondaggiCurrent.mediaRisposte"
           :goal="sondaggiGoals.mediaRisposte"
           :trend="null"
         />
@@ -33,11 +33,11 @@
         <goal-progress
           title="Obiettivo partecipazione"
           description="Target risposte al mese"
-          :progress="84"
+          :progress="Math.round(sondaggiProgressPercent)"
           :target-percent="parseInt(goals.sondaggi.targetPercent) || 100"
-          :target-label="goals.sondaggi.target"
-          current-label="8.4K"
-          progress-text="Ottima partecipazione. Mancano 1.6K risposte per l'obiettivo."
+          :target-label="sondaggiGoals.risposteTotali"
+          :current-label="sondaggiCurrent.risposteTotali"
+          :progress-text="`Hai raggiunto circa ${Math.round(sondaggiProgressPercent)}% dell'obiettivo.`"
         />
       </div>
       <div class="col-span-12 xl:col-span-5">
@@ -58,9 +58,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useGoals } from '@/composables/useGoals'
 import { useObjectives } from '@/composables/useObjectives'
+import { useMetrics } from '@/composables/useMetrics'
+import { api, type SondaggiStats } from '@/api/client'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
@@ -69,6 +71,30 @@ import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
+const { formatMetricValue } = useMetrics()
+
+function denormalizeValue(value: number, unit: string): number {
+  if (unit === '%') return value * 100
+  if (unit === 'K') return value / 1_000
+  if (unit === 'M') return value / 1_000_000
+  return value
+}
+
+const stats = ref<SondaggiStats | null>(null)
+const loading = ref(false)
+
+async function loadStats() {
+  loading.value = true
+  try {
+    stats.value = await api.sondaggi.getStats()
+  } catch {
+    stats.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadStats)
 
 const sondaggiGoals = computed(() => {
   const byId = new Map(
@@ -90,12 +116,61 @@ const sondaggiGoals = computed(() => {
     mediaRisposte: goalFor('surveys-average-responses', goals.value.sondaggi.mediaRisposte),
   }
 })
+const sondaggiCurrent = computed(() => {
+  const countObj = objectives.value.find((o) => o.id === 'surveys-count')
+  const totalRespObj = objectives.value.find((o) => o.id === 'surveys-total-responses')
+  const completionObj = objectives.value.find((o) => o.id === 'surveys-completion-rate')
+  const avgRespObj = objectives.value.find((o) => o.id === 'surveys-average-responses')
+
+  const countUnit = countObj?.unit ?? ''
+  const totalRespUnit = totalRespObj?.unit ?? ''
+  const completionUnit = completionObj?.unit ?? '%'
+  const avgRespUnit = avgRespObj?.unit ?? ''
+
+  const countRaw = stats.value?.surveysCount ?? 0
+  const totalResponsesRaw = stats.value?.totalResponses ?? 0
+  const completionRateFraction = stats.value?.completionRate ?? 0
+  const avgResponsesRaw = stats.value?.averageResponses ?? 0
+
+  const count = denormalizeValue(countRaw, countUnit)
+  const totalResponses = denormalizeValue(totalResponsesRaw, totalRespUnit)
+  const avgResponses = denormalizeValue(avgResponsesRaw, avgRespUnit)
+
+  return {
+    numeroSondaggi: loading.value ? '...' : formatMetricValue(count, countUnit),
+    risposteTotali: loading.value ? '...' : formatMetricValue(totalResponses, totalRespUnit),
+    completionRate: loading.value
+      ? '...'
+      : formatMetricValue(completionRateFraction * (completionUnit === '%' ? 100 : 1), completionUnit),
+    mediaRisposte: loading.value ? '...' : formatMetricValue(avgResponses, avgRespUnit),
+  }
+})
+
+const sondaggiProgressPercent = computed(() => {
+  const obj = objectives.value.find((o) => o.id === 'surveys-total-responses')
+  const goalBase = obj?.value ?? 0
+  if (goalBase <= 0) return 0
+
+  const currentBase = stats.value?.totalResponses ?? 0
+  const percent = (currentBase / goalBase) * 100
+  return Math.max(0, Math.min(percent, 999))
+})
+
 const chartSeries = computed(() => [
-  { name: 'Risposte', data: [520, 580, 620, 650, 680, 720, 750, 780, 800, 820, 830, 840] },
+  {
+    name: 'Risposte',
+    data: [stats.value?.totalResponses ?? 0],
+  },
 ])
 
 const performanceSeries = computed(() => [
-  { name: 'Risposte (K)', data: [0.52, 0.58, 0.62, 0.65, 0.68, 0.72, 0.75, 0.78, 0.8, 0.82, 0.83, 0.84] },
-  { name: 'Completion %', data: [70, 72, 71, 73, 74, 75, 74, 76, 75, 76, 76, 76] },
+  {
+    name: 'Risposte',
+    data: [stats.value?.totalResponses ?? 0],
+  },
+  {
+    name: 'Completion %',
+    data: [Math.round((stats.value?.completionRate ?? 0) * 100)],
+  },
 ])
 </script>

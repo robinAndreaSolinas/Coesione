@@ -17,6 +17,12 @@
           :trend="clickRateTrend"
         />
         <metric-card
+          label="Policy briefs e newsletter distribuiti"
+          :value="sentTotalDisplay"
+          :goal="newsletterGoals.invii"
+          :trend="null"
+        />
+        <metric-card
           label="Iscritti totali"
           :value="subscribersTotalDisplay"
           :goal="newsletterGoals.iscrittiTotali"
@@ -80,6 +86,7 @@ const openRateDisplay = computed(() => formatPercent(metrics.value.openRate))
 const clickRateDisplay = computed(() => formatPercent(metrics.value.clickRate))
 const subscribersTotalDisplay = computed(() => formatNumber(metrics.value.subscribersTotal))
 const subscribersActiveDisplay = computed(() => formatNumber(metrics.value.subscribersActive))
+const sentTotalDisplay = computed(() => formatNumber(metrics.value.sentTotal))
 
 const newsletterObjectivesById = computed(
   () =>
@@ -102,6 +109,7 @@ const newsletterGoals = computed(() => {
     clickRate: goalFor('newsletter-click-rate', goals.value.newsletter.clickRate),
     iscrittiTotali: goalFor('newsletter-subscribers-total', goals.value.newsletter.iscrittiTotali),
     iscrittiAttivi: goalFor('newsletter-subscribers-active', goals.value.newsletter.iscrittiAttivi),
+    invii: goalFor('newsletter-sent', goals.value.newsletter.invii),
   }
 })
 

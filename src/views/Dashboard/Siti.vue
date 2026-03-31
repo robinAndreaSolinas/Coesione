@@ -25,6 +25,20 @@
           :trend="null"
           :progress-percent="sitiCurrent.articoliPubblicati.progress"
         />
+        <metric-card
+          label="Articoli stampati (carta)"
+          :value="sitiCurrent.articoliStampati.value"
+          :goal="sitiGoals.articoliStampati"
+          :trend="null"
+          :progress-percent="sitiCurrent.articoliStampati.progress"
+        />
+        <metric-card
+          label="Articoli digitali (web)"
+          :value="sitiCurrent.articoliDigitali.value"
+          :goal="sitiGoals.articoliDigitali"
+          :trend="null"
+          :progress-percent="sitiCurrent.articoliDigitali.progress"
+        />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
@@ -71,6 +85,9 @@ const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
 const { pageviews, articlesPublished, dailyPoints } = useSiteMetrics()
 
+const articlesPrinted = ref(0)
+const articlesDigital = ref(0)
+
 const uniqueUsersMonthAvg = ref(0)
 const uniqueUsersByMonth = ref<Array<{ eventDate: string; uug: number }>>([])
 
@@ -97,6 +114,27 @@ onMounted(async () => {
     } else {
       uniqueUsersMonthAvg.value = 0
       uniqueUsersByMonth.value = []
+    }
+
+    const bySourceRes = await fetch('/api/v1/site/stats/by-source', { headers })
+    if (bySourceRes.ok) {
+      const bySourceData = await bySourceRes.json()
+      const sources = bySourceData?.data?.sources
+      if (Array.isArray(sources)) {
+        let printed = 0
+        let digital = 0
+        for (const src of sources) {
+          const sourceName = String(src.source ?? '')
+          const count = Number(src.total_count_url ?? 0)
+          if (sourceName === 'carta') {
+            printed += count
+          } else {
+            digital += count
+          }
+        }
+        articlesPrinted.value = printed
+        articlesDigital.value = digital
+      }
     }
   } catch {
     uniqueUsersMonthAvg.value = 0
@@ -152,6 +190,8 @@ const sitiGoals = computed(() => {
     utentiUniciArticoli: goalFor('articles-unique-users', goals.value.siti.utentiUniciArticoli),
     pagineVisteArticoli: goalFor('articles-pageviews', goals.value.siti.pagineVisteArticoli),
     articoliPubblicati: goalFor('articles-published-count', goals.value.siti.articoliPubblicati),
+    articoliStampati: goalFor('articles-printed-count', goals.value.siti.articoliStampati),
+    articoliDigitali: goalFor('articles-digital-count', goals.value.siti.articoliDigitali),
   }
 })
 
@@ -179,6 +219,8 @@ const sitiCurrent = computed(() => {
     utentiUniciArticoli: currentFor('articles-unique-users', uniqueUsersMonthAvg.value),
     pagineVisteArticoli: currentFor('articles-pageviews', pageviews.value),
     articoliPubblicati: currentFor('articles-published-count', articlesPublished.value),
+    articoliStampati: currentFor('articles-printed-count', articlesPrinted.value),
+    articoliDigitali: currentFor('articles-digital-count', articlesDigital.value),
   }
 })
 

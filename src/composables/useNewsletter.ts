@@ -6,6 +6,7 @@ const metrics = ref<NewsletterMetrics>({
   clickRate: 0,
   subscribersTotal: 0,
   subscribersActive: 0,
+  sentTotal: 0,
 })
 
 export function useNewsletter() {
@@ -13,7 +14,13 @@ export function useNewsletter() {
     try {
       metrics.value = await api.newsletter.getMetrics()
     } catch {
-      metrics.value = { openRate: 0, clickRate: 0, subscribersTotal: 0, subscribersActive: 0 }
+      metrics.value = {
+        openRate: 0,
+        clickRate: 0,
+        subscribersTotal: 0,
+        subscribersActive: 0,
+        sentTotal: 0,
+      }
     }
   }
 

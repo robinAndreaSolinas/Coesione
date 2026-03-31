@@ -120,6 +120,19 @@ router.get('/metrics', async (_req: Request, res: Response) => {
   }
 })
 
+// Statistiche articoli per sorgente (web vs carta, ecc.)
+// Proxy per: GET /api/v1/site/stats/by-source del Data API.
+router.get('/stats/by-source', async (_req: Request, res: Response) => {
+  try {
+    const { start, end } = getDateRange()
+    const path = `/api/v1/site/stats/by-source?from_date=${start}&to_date=${end}`
+    const resp = await fetchJson<unknown>(path)
+    res.json(resp)
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : 'Errore' })
+  }
+})
+
 // Media mensile e andamento utenti unici.
 // Source: `GET /api/v1/site/unique-user` (FastAPI/Data API).
 router.get('/unique-user', async (_req: Request, res: Response) => {

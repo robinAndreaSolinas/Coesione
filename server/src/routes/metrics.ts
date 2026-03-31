@@ -110,6 +110,71 @@ interface SiteAggregates {
   uniqueUsers: number
   pageviews: number
   articlesPublished: number
+  articlesPrinted: number
+  articlesDigital: number
+}
+
+interface SiteStatsBySourceEntry {
+  publish_date: string
+  count_url: number
+  pageview: number
+}
+
+interface SiteSourceItem {
+  source: string
+  total_count_url: number
+  total_pageview: number
+  by_date: SiteStatsBySourceEntry[]
+}
+
+interface SiteStatsBySourceData {
+  total: SiteTotalStats
+  sources: SiteSourceItem[]
+}
+
+interface SiteStatsBySourceResponse {
+  success: boolean
+  data?: SiteStatsBySourceData
+  error?: unknown
+  timestamp?: string
+}
+
+interface SondaggiAggregates {
+  surveysCount: number
+  totalResponses: number
+  completionRateFraction: number
+  averageResponses: number
+}
+
+interface SocialAggregates {
+  engagementRatePercent: number
+  viewsTotal: number
+  audienceTotal: number
+  sharesTotal: number
+  commentsTotal: number
+}
+
+interface VideoAggregates {
+  audience: number
+  minutesWatched: number
+  completionRateFraction: number
+}
+
+interface LogoraStats {
+  cohesion_sources: number
+  total_groups: number
+  total_messages: number
+  total_participants: number
+  total_consultations: number
+  total_proposals: number
+  total_votes: number
+}
+
+interface LogoraStatsResponse {
+  success: boolean
+  data?: LogoraStats | null
+  error?: unknown
+  timestamp?: string
 }
 
 interface SiteUniqueUserResponse {
@@ -185,19 +250,38 @@ async function getNewsletterAggregates(start: string, end: string): Promise<News
 }
 
 async function getSiteAggregates(start: string, end: string): Promise<SiteAggregates | null> {
-  const path = `/api/v1/site/stats?from_date=${start}&to_date=${end}`
-  const resp = await fetchJson<SiteStatsResponse>(path)
-  if (!resp?.success || !resp.data) {
+  const statsPath = `/api/v1/site/stats?from_date=${start}&to_date=${end}`
+  const bySourcePath = `/api/v1/site/stats/by-source?from_date=${start}&to_date=${end}`
+
+  const [statsResp, bySourceResp] = await Promise.all([
+    fetchJson<SiteStatsResponse>(statsPath),
+    fetchJson<SiteStatsBySourceResponse>(bySourcePath),
+  ])
+
+  if (!statsResp?.success || !statsResp.data) {
     return null
   }
 
-  const total = resp.data.total
+  const total = statsResp.data.total
   if (!total) {
     return null
   }
 
   const articlesPublished = total.count_url
   const pageviews = total.pageview
+
+  let articlesPrinted = 0
+  let articlesDigital = 0
+
+  if (bySourceResp?.success && bySourceResp.data && Array.isArray(bySourceResp.data.sources)) {
+    for (const src of bySourceResp.data.sources) {
+      if (src.source === 'carta') {
+        articlesPrinted += src.total_count_url
+      } else {
+        articlesDigital += src.total_count_url
+      }
+    }
+  }
 
   let uniqueUsers = 0
   try {
@@ -222,6 +306,71 @@ async function getSiteAggregates(start: string, end: string): Promise<SiteAggreg
     uniqueUsers,
     pageviews,
     articlesPublished,
+    articlesPrinted,
+    articlesDigital,
+  }
+}
+
+async function getSondaggiAggregates(): Promise<SondaggiAggregates | null> {
+  const path = `/api/v1/sondaggi/stats`
+  const resp = await fetchJson<LogoraStatsResponse>(path)
+  if (!resp?.success || !resp.data) {
+    return null
+  }
+
+  const stats = resp.data
+
+  const surveysCount = stats.total_consultations || stats.total_groups || 0
+  const totalResponses = stats.total_votes || stats.total_messages || 0
+  const completionRateFraction =
+    stats.total_participants > 0 ? Math.min(totalResponses / stats.total_participants, 1) : 0
+  const averageResponses = surveysCount > 0 ? totalResponses / surveysCount : 0
+
+  return {
+    surveysCount,
+    totalResponses,
+    completionRateFraction,
+    averageResponses,
+  }
+}
+
+async function getSocialAggregates(): Promise<SocialAggregates | null> {
+  const path = `/api/v1/social/summary`
+  const resp = await fetchJson<{ success?: boolean; data?: {
+    interactionsTotal: number
+    audienceTotal: number
+    viewsTotal: number
+    sharesTotal: number
+    commentsTotal: number
+    engagementRateTotalPercent: number
+  } }>(path)
+
+  if (!resp?.success || !resp.data) {
+    return null
+  }
+
+  const data = resp.data
+  return {
+    engagementRatePercent: data.engagementRateTotalPercent || 0,
+    viewsTotal: data.viewsTotal || 0,
+    audienceTotal: data.audienceTotal || 0,
+    sharesTotal: data.sharesTotal || 0,
+    commentsTotal: data.commentsTotal || 0,
+  }
+}
+
+async function getVideoAggregates(start: string, end: string): Promise<VideoAggregates | null> {
+  const path = `/api/v1/video/stats?from_date=${start}&to_date=${end}`
+  const resp = await fetchJson<{ audience: number; minutesWatched: number; vthAvg: number }>(path)
+
+  if (!resp) {
+    return null
+  }
+
+  return {
+    audience: Number(resp.audience) || 0,
+    minutesWatched: Number(resp.minutesWatched) || 0,
+    completionRateFraction: Number(resp.vthAvg) || 0,
   }
 }
 
@@ -237,6 +386,9 @@ async function handleSummary(_req: Request, res: Response) {
 
     let newsletterAgg: NewsletterAggregates | null = null
     let siteAgg: SiteAggregates | null = null
+    let sondaggiAgg: SondaggiAggregates | null = null
+    let socialAgg: SocialAggregates | null = null
+    let videoAgg: VideoAggregates | null = null
     try {
       newsletterAgg = await getNewsletterAggregates(start, end)
     } catch (e) {
@@ -247,6 +399,24 @@ async function handleSummary(_req: Request, res: Response) {
       siteAgg = await getSiteAggregates(start, end)
     } catch (e) {
       console.error('Error fetching site stats from data API:', e)
+    }
+
+    try {
+      sondaggiAgg = await getSondaggiAggregates()
+    } catch (e) {
+      console.error('Error fetching sondaggi stats from data API:', e)
+    }
+
+    try {
+      socialAgg = await getSocialAggregates()
+    } catch (e) {
+      console.error('Error fetching social stats from data API:', e)
+    }
+
+    try {
+      videoAgg = await getVideoAggregates(start, end)
+    } catch (e) {
+      console.error('Error fetching video stats from data API:', e)
     }
 
     const result: MetricSummary[] = objectives.map((obj) => {
@@ -279,6 +449,67 @@ async function handleSummary(_req: Request, res: Response) {
             break
           case 'articles-published-count':
             current = siteAgg.articlesPublished
+            break
+          case 'articles-printed-count':
+            current = siteAgg.articlesPrinted
+            break
+          case 'articles-digital-count':
+            current = siteAgg.articlesDigital
+            break
+          default:
+            current = 0
+        }
+      } else if (obj.category === 'sondaggi' && sondaggiAgg) {
+        switch (obj.id) {
+          case 'surveys-count':
+            current = sondaggiAgg.surveysCount
+            break
+          case 'surveys-total-responses':
+            current = sondaggiAgg.totalResponses
+            break
+          case 'surveys-completion-rate':
+            current = sondaggiAgg.completionRateFraction
+            break
+          case 'surveys-average-responses':
+            current = sondaggiAgg.averageResponses
+            break
+          default:
+            current = 0
+        }
+      } else if (obj.category === 'social' && socialAgg) {
+        switch (obj.id) {
+          case 'social-engagement-rate':
+            // obiettivo memorizzato come frazione (0–1), API restituisce percentuale
+            current = (socialAgg.engagementRatePercent || 0) / 100
+            break
+          case 'social-views':
+            current = socialAgg.viewsTotal
+            break
+          case 'social-audience':
+            current = socialAgg.audienceTotal
+            break
+          case 'social-shares':
+            current = socialAgg.sharesTotal
+            break
+          case 'social-comments':
+            current = socialAgg.commentsTotal
+            break
+          case 'social-reach':
+            current = socialAgg.audienceTotal
+            break
+          default:
+            current = 0
+        }
+      } else if (obj.category === 'video' && videoAgg) {
+        switch (obj.id) {
+          case 'video-audience':
+            current = videoAgg.audience
+            break
+          case 'video-minutes-watched':
+            current = videoAgg.minutesWatched
+            break
+          case 'video-completion-rate':
+            current = videoAgg.completionRateFraction
             break
           default:
             current = 0

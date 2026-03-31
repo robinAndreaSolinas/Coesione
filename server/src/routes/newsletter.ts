@@ -58,6 +58,7 @@ async function getNewsletterStats(start: string, end: string): Promise<{
   clickRate: number
   subscribersTotal: number
   subscribersActive: number
+  sentTotal: number
   daily: {
     day: string
     openRate: number
@@ -74,6 +75,7 @@ async function getNewsletterStats(start: string, end: string): Promise<{
       clickRate: 0,
       subscribersTotal: 0,
       subscribersActive: 0,
+      sentTotal: 0,
       daily: [],
     }
   }
@@ -136,6 +138,7 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     clickRate: Number((clickRateFraction * 100).toFixed(1)),
     subscribersTotal,
     subscribersActive,
+    sentTotal: totalSent,
     daily,
   }
 }

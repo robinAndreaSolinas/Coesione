@@ -37,6 +37,7 @@ export interface NewsletterMetrics {
   clickRate: number
   subscribersTotal: number
   subscribersActive: number
+  sentTotal: number
 }
 
 export interface NewsletterDailyPoint {
@@ -89,6 +90,13 @@ export interface ApiMetricSummary {
   unit: string
   goal: number
   current: number
+}
+
+export interface SondaggiStats {
+  surveysCount: number
+  totalResponses: number
+  completionRate: number
+  averageResponses: number
 }
 
 function getToken(): string | null {
@@ -176,6 +184,9 @@ export const api = {
   },
   video: {
     getStats: () => request<VideoStats>('/video/stats'),
+  },
+  sondaggi: {
+    getStats: () => request<SondaggiStats>('/sondaggi/stats'),
   },
   social: {
     summary: () => request<{ success: boolean; data: SocialSummaryData }>('/social/summary'),

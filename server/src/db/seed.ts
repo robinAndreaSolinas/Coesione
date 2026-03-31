@@ -33,6 +33,8 @@ export function seed(db: Database.Database) {
     { id: 'articles-unique-users', title: 'Utenti unici articoli', category: 'siti', path: '/siti', value: 50_000, unit: 'K' },
     { id: 'articles-pageviews', title: 'Pagine viste articoli', category: 'siti', path: '/siti', value: 1_500_000, unit: 'M' },
     { id: 'articles-published-count', title: 'Numero articoli pubblicati', category: 'siti', path: '/siti', value: 500, unit: '' },
+    { id: 'articles-printed-count', title: 'Articoli stampati (carta)', category: 'siti', path: '/siti', value: 40, unit: '' },
+    { id: 'articles-digital-count', title: 'Articoli digitali (web)', category: 'siti', path: '/siti', value: 190, unit: '' },
 
     // Social
     { id: 'social-engagement-rate', title: 'Engagement rate (calcolato)', category: 'social', path: '/social', value: 0.05, unit: '%' },

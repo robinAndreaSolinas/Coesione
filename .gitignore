@@ -38,3 +38,4 @@ server/data/
 server/node_modules/
 
 docker-compose.*
+docs/local
