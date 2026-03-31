@@ -5,46 +5,40 @@
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
         <metric-card
-          label="Audience"
-          value="N/A"
+          label="Stream"
+          :value="audienceLabel"
           :goal="videoGoals.audience"
-          :trend="null"
         />
         <metric-card
           label="Minuti guardati"
-          value="N/A"
+          :value="minutesLabel"
           :goal="videoGoals.minuti"
-          :trend="null"
-        />
-        <metric-card
-          label="Completion rate"
-          value="N/A"
-          :goal="videoGoals.completionRate"
-          :trend="null"
         />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
           title="Obiettivo visualizzazioni"
-          description="Target mensile visualizzazioni"
-          :progress="89"
-          :target-percent="parseInt(goals.video.targetPercent) || 100"
+          description="Target visualizzazioni e minuti guardati"
+          :progress="videoProgress"
+          :target-percent="videoTargetPercent"
           :target-label="goals.video.target"
-          current-label="892K"
-          progress-text="Quasi raggiunto! Mancano circa 108K visualizzazioni."
+          :current-label="`${videoProgress}%`"
+          :progress-text="`Hai raggiunto circa ${videoProgress}% dell'obiettivo.`"
         />
       </div>
       <div class="col-span-12 xl:col-span-5">
         <analytics-chart
-          title="Visualizzazioni mensili"
+          title="Visualizzazioni giornaliere"
           :series="chartSeries"
+          :categories="chartCategories"
         />
       </div>
       <div class="col-span-12">
         <analytics-chart
           title="Performance video"
-          description="Visualizzazioni e minuti guardati"
+          description="Stream e minuti guardati"
           :series="performanceSeries"
+          :categories="chartCategories"
         />
       </div>
     </div>
@@ -52,9 +46,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useGoals } from '@/composables/useGoals'
 import { useObjectives } from '@/composables/useObjectives'
+import { useMetrics } from '@/composables/useMetrics'
+import { api, type VideoStats } from '@/api/client'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
@@ -63,6 +59,23 @@ import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
+const { formatMetricValue } = useMetrics()
+
+const stats = ref<VideoStats | null>(null)
+const loading = ref(false)
+
+async function loadStats() {
+  loading.value = true
+  try {
+    stats.value = await api.video.getStats()
+  } catch {
+    stats.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadStats)
 
 const videoGoals = computed(() => {
   const byId = new Map(
@@ -80,15 +93,76 @@ const videoGoals = computed(() => {
   return {
     audience: goalFor('video-audience', goals.value.video.audience),
     minuti: goalFor('video-minutes-watched', goals.value.video.minuti),
-    completionRate: goalFor('video-completion-rate', goals.value.video.completionRate),
   }
 })
+
+const videoUnits = computed(() => {
+  const byId = new Map(
+    objectives.value
+      .filter((o) => o.category === 'video')
+      .map((o) => [o.id, o])
+  )
+
+  return {
+    audience: byId.get('video-audience')?.unit ?? '',
+    minuti: byId.get('video-minutes-watched')?.unit ?? '',
+  }
+})
+
+function denormalizeValue(value: number, unit: string): number {
+  if (unit === '%') return value * 100
+  if (unit === 'K') return value / 1_000
+  if (unit === 'M') return value / 1_000_000
+  return value
+}
+
+const audienceValue = computed(() =>
+  denormalizeValue(stats.value?.audience ?? 0, videoUnits.value.audience || '')
+)
+const minutesWatchedValue = computed(() =>
+  denormalizeValue(stats.value?.minutesWatched ?? 0, videoUnits.value.minuti || '')
+)
+
+const audienceLabel = computed(() =>
+  loading.value
+    ? '...'
+    : formatMetricValue(audienceValue.value, videoUnits.value.audience || '')
+)
+const minutesLabel = computed(() =>
+  loading.value
+    ? '...'
+    : formatMetricValue(minutesWatchedValue.value, videoUnits.value.minuti || '')
+)
+const videoTargetPercent = computed(() => {
+  const raw = goals.value.video.target || '100'
+  const parsed = parseInt(raw.replace('%', ''), 10)
+  return Number.isNaN(parsed) ? 100 : parsed
+})
+
+const videoProgress = computed(() => {
+  const current = (stats.value?.vthAvg ?? 0) * 100
+  return Math.max(0, Math.round(current))
+})
+
+const chartCategories = computed(() =>
+  stats.value?.daily.map((d) => d.date) ?? []
+)
+
 const chartSeries = computed(() => [
-  { name: 'Visualizzazioni', data: [450, 520, 480, 600, 650, 700, 720, 750, 800, 820, 850, 892] },
+  {
+    name: 'Stream',
+    data: stats.value?.daily.map((d) => d.stream) ?? [],
+  },
 ])
 
 const performanceSeries = computed(() => [
-  { name: 'Visualizzazioni (K)', data: [45, 52, 48, 60, 65, 70, 72, 75, 80, 82, 85, 89] },
-  { name: 'Minuti (K)', data: [8, 9, 10, 11, 12, 13, 14, 13, 15, 14, 16, 15] },
+  {
+    name: 'Stream',
+    data: stats.value?.daily.map((d) => d.stream) ?? [],
+  },
+  {
+    name: 'Minuti guardati',
+    data: stats.value?.daily.map((d) => Math.round(d.watchedSeconds / 60)) ?? [],
+  },
 ])
 </script>

@@ -12,6 +12,7 @@ import newsletterRoutes from './routes/newsletter.js'
 import metricsRoutes from './routes/metrics.js'
 import siteRoutes from './routes/site.js'
 import socialRoutes from './routes/social.js'
+import videoRoutes from './routes/video.js'
 
 const app = express()
 const PORT = Number(process.env.PORT) || 3001
@@ -29,6 +30,7 @@ app.use('/api/v1/newsletter', newsletterRoutes)
 app.use('/api/v1/metrics', metricsRoutes)
 app.use('/api/v1/site', siteRoutes)
 app.use('/api/v1/social', socialRoutes)
+app.use('/api/v1/video', videoRoutes)
 
 app.get('/api/v1/health', (_req, res) => res.json({ ok: true }))
 

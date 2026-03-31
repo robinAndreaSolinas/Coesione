@@ -40,21 +40,6 @@
           progress-text="Ottimo engagement! Raggiungerai l'obiettivo a fine mese."
         />
       </div>
-      <div class="col-span-12 xl:col-span-5">
-        <analytics-chart
-          title="Interazioni per mese"
-          :series="chartSeries"
-          :categories="chartCategories"
-        />
-      </div>
-      <div class="col-span-12">
-        <analytics-chart
-          title="Andamento engagement"
-          description="Engagement, condivisioni e commenti"
-          :series="engagementSeries"
-          :categories="chartCategories"
-        />
-      </div>
     </div>
   </admin-layout>
 </template>

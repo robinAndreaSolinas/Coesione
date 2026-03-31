@@ -59,6 +59,20 @@ export interface SiteMetrics {
   daily: SiteDailyPoint[]
 }
 
+export interface VideoDailyPoint {
+  date: string
+  stream: number
+  vth: number
+  watchedSeconds: number
+}
+
+export interface VideoStats {
+  audience: number
+  minutesWatched: number
+  vthAvg: number
+  daily: VideoDailyPoint[]
+}
+
 export interface SocialSummaryData {
   interactionsTotal: number
   audienceTotal: number
@@ -159,6 +173,9 @@ export const api = {
   },
   site: {
     getMetrics: () => request<SiteMetrics>('/site/metrics'),
+  },
+  video: {
+    getStats: () => request<VideoStats>('/video/stats'),
   },
   social: {
     summary: () => request<{ success: boolean; data: SocialSummaryData }>('/social/summary'),

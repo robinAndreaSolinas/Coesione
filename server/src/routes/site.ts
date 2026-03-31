@@ -49,11 +49,14 @@ interface SiteUniqueUserByDate {
   uug: number
 }
 
-interface SiteUniqueUserResponse {
+interface SiteUniqueUserResponseRaw {
   success: boolean
   data?: {
-    month_avg?: number
-    by_date?: SiteUniqueUserByDate[]
+    success?: boolean
+    data?: {
+      month_avg?: number
+      by_date?: SiteUniqueUserByDate[]
+    }
   }
   error?: unknown
   timestamp?: string
@@ -80,19 +83,32 @@ async function fetchJson<T>(pathWithQuery: string): Promise<T> {
 router.get('/metrics', async (_req: Request, res: Response) => {
   try {
     const { start, end } = getDateRange()
-    const path = `/api/v1/site/stats?from_date=${start}&to_date=${end}`
-    const resp = await fetchJson<SiteStatsResponse>(path)
+    const statsPath = `/api/v1/site/stats?from_date=${start}&to_date=${end}`
+    const uniquePath = `/api/v1/site/unique-user?from_date=${start}&to_date=${end}`
 
-    if (!resp.success || !resp.data || !resp.data.total) {
+    const [statsResp, uniqueResp] = await Promise.all([
+      fetchJson<SiteStatsResponse>(statsPath),
+      fetchJson<SiteUniqueUserResponseRaw>(uniquePath),
+    ])
+
+    if (!statsResp.success || !statsResp.data || !statsResp.data.total) {
       res.status(502).json({ error: 'Risposta non valida dal data API' })
       return
     }
 
-    const total = resp.data.total
-    const daily = Array.isArray(resp.data.by_date) ? resp.data.by_date : []
+    const total = statsResp.data.total
+    const dailyRaw = Array.isArray(statsResp.data.by_date) ? statsResp.data.by_date : []
+    const daily = [...dailyRaw].sort((a, b) => a.publish_date.localeCompare(b.publish_date))
+
+    let uniqueUsers = 0
+    const uniqueOuter = uniqueResp?.data
+    const uniqueInner = uniqueOuter?.data
+    if (uniqueInner && uniqueInner.month_avg != null) {
+      uniqueUsers = Number(uniqueInner.month_avg) || 0
+    }
 
     const payload: SiteMetricsPayload = {
-      uniqueUsers: 0,
+      uniqueUsers,
       pageviews: total.pageview,
       articlesPublished: total.count_url,
       daily,
@@ -110,14 +126,19 @@ router.get('/unique-user', async (_req: Request, res: Response) => {
   try {
     const { start, end } = getDateRange()
     const path = `/api/v1/site/unique-user?from_date=${start}&to_date=${end}`
-    const resp = await fetchJson<SiteUniqueUserResponse>(path)
+    const resp = await fetchJson<SiteUniqueUserResponseRaw>(path)
 
-    if (!resp?.success) {
+    if (!resp?.success || !resp.data) {
       res.status(502).json({ error: 'Risposta non valida dal data API' })
       return
     }
+    const inner = resp.data.data ?? {}
 
-    res.json(resp)
+    res.json({
+      success: true,
+      data: inner,
+      timestamp: resp.timestamp,
+    })
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : 'Errore' })
   }

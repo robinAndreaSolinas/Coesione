@@ -112,6 +112,13 @@ interface SiteAggregates {
   articlesPublished: number
 }
 
+interface SiteUniqueUserResponse {
+  success: boolean
+  data?: unknown
+  error?: unknown
+  timestamp?: string
+}
+
 const router = Router()
 
 function getDateRange(): { start: string; end: string } {
@@ -191,7 +198,25 @@ async function getSiteAggregates(start: string, end: string): Promise<SiteAggreg
 
   const articlesPublished = total.count_url
   const pageviews = total.pageview
-  const uniqueUsers = 0
+
+  let uniqueUsers = 0
+  try {
+    const uniquePath = `/api/v1/site/unique-user?from_date=${start}&to_date=${end}`
+    const uniqueResp = await fetchJson<SiteUniqueUserResponse>(uniquePath)
+    if (uniqueResp?.success && uniqueResp.data) {
+      const outerData = uniqueResp.data as {
+        success?: boolean
+        data?: { month_avg?: number }
+      }
+      const inner = outerData?.data
+      if (inner && inner.month_avg != null) {
+        uniqueUsers = Number(inner.month_avg) || 0
+      }
+    }
+  } catch (e) {
+    console.error('Error fetching site unique users from data API:', e)
+    uniqueUsers = 0
+  }
 
   return {
     uniqueUsers,
