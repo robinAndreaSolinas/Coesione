@@ -164,6 +164,6 @@ export const api = {
     summary: () => request<{ success: boolean; data: SocialSummaryData }>('/social/summary'),
   },
   metrics: {
-    summary: () => request<ApiMetricSummary[]>('/metrics/summary2'),
+    summary: () => request<ApiMetricSummary[]>('/metrics/summary'),
   },
 }

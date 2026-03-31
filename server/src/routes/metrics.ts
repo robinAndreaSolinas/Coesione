@@ -277,7 +277,6 @@ async function handleSummary(_req: Request, res: Response) {
 }
 
 router.get('/summary', handleSummary)
-router.get('/summary2', handleSummary)
 
 export default router
 

@@ -16,25 +16,6 @@
         :target-label="metricByKeyObj[obj.id]?.goalLabel"
       />
     </div>
-    <div v-if="metricsForView.length" class="mt-8">
-      <h2 class="text-base font-semibold text-gray-800 dark:text-white/90">
-        Stato complessivo delle metriche
-      </h2>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Valori attuali rispetto agli obiettivi per le principali metriche di ogni area.
-      </p>
-      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        <metric-card
-          v-for="metric in metricsForView"
-          :key="`${metric.category}-${metric.key}`"
-          :label="metric.title"
-          :value="metric.currentLabel"
-          :goal="metric.goalLabel"
-          :progress-percent="metric.progress"
-          :icon-bg-class="metricIconBg(metric.category)"
-        />
-      </div>
-    </div>
     <div class="mt-8 space-y-6">
       <objective-pie-chart :data="progressByCategory" />
       <div>

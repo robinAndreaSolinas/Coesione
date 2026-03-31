@@ -36,10 +36,11 @@ function denormalizeValue(value: number, unit: string): number {
 }
 
 function formatMetricValue(value: number, unit: string): string {
-  if (unit === '%') return `${value}%`
-  if (unit === 'K') return `${value}K`
-  if (unit === 'M') return `${value}M`
-  return String(value)
+  const rounded = Math.round(value * 10) / 10
+  if (unit === '%') return `${rounded}%`
+  if (unit === 'K') return `${rounded}K`
+  if (unit === 'M') return `${rounded}M`
+  return String(rounded)
 }
 
 export function useMetrics() {
