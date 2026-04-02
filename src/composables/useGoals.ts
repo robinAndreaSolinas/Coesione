@@ -23,6 +23,7 @@ const defaultGoals: GoalsState = {
     condivisioni: '10K',
     commenti: '5K',
     reach: '3M',
+    postsCount: '306',
     target: '5%',
     targetPercent: '100',
   },

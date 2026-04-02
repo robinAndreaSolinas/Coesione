@@ -28,6 +28,12 @@
           :goal="socialGoals.condivisioni"
           :trend="null"
         />
+        <metric-card
+          label="Numero post"
+          :value="socialCurrent.posts"
+          :goal="socialGoals.postsCount"
+          :trend="null"
+        />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
@@ -76,6 +82,7 @@ const socialGoals = computed(() => {
     views: goalFor('social-views', goals.value.social.views),
     audience: goalFor('social-audience', goals.value.social.audience),
     condivisioni: goalFor('social-shares', goals.value.social.condivisioni),
+    postsCount: goalFor('social-posts-count', goals.value.social.postsCount),
   }
 })
 
@@ -96,8 +103,15 @@ function denormalizeForDisplay(raw: number, unit: string): number {
 
 const chartCategories = computed(() => ['Totale'])
 
-const { interactionsTotal, audienceTotal, viewsTotal, sharesTotal, commentsTotal, engagementRateTotalPercent } =
-  useSocialSummary()
+const {
+  interactionsTotal,
+  audienceTotal,
+  viewsTotal,
+  sharesTotal,
+  commentsTotal,
+  engagementRateTotalPercent,
+  postsCount,
+} = useSocialSummary()
 
 const socialCurrent = computed(() => {
   const engagementObj = objectives.value.find((o) => o.id === 'social-engagement-rate')
@@ -120,6 +134,7 @@ const socialCurrent = computed(() => {
   const views = formatCompact(denormalizeForDisplay(viewsTotal.value, viewsUnit), viewsUnit)
   const audience = formatCompact(denormalizeForDisplay(audienceTotal.value, audienceUnit), audienceUnit)
   const condivisioni = formatCompact(denormalizeForDisplay(sharesTotal.value, sharesUnit), sharesUnit)
+  const posts = formatCompact(postsCount.value, objectives.value.find((o) => o.id === 'social-posts-count')?.unit ?? '')
 
   return {
     engagementRate,
@@ -127,6 +142,7 @@ const socialCurrent = computed(() => {
     audience,
     condivisioni,
     engagementRateRawLabel,
+    posts,
   }
 })
 

@@ -28,6 +28,7 @@ export function useSocialSummary() {
   const sharesTotal = computed(() => summary.value?.sharesTotal ?? 0)
   const commentsTotal = computed(() => summary.value?.commentsTotal ?? 0)
   const engagementRateTotalPercent = computed(() => summary.value?.engagementRateTotalPercent ?? 0)
+  const postsCount = computed(() => summary.value?.postsCount ?? 0)
 
   return {
     loading,
@@ -39,6 +40,7 @@ export function useSocialSummary() {
     sharesTotal,
     commentsTotal,
     engagementRateTotalPercent,
+    postsCount,
     reload: load,
   }
 }

@@ -17,12 +17,6 @@
           :trend="null"
         />
         <metric-card
-          label="Completion rate"
-          :value="sondaggiCurrent.completionRate"
-          :goal="sondaggiGoals.completionRate"
-          :trend="null"
-        />
-        <metric-card
           label="Media risposte/sondaggio"
           :value="sondaggiCurrent.mediaRisposte"
           :goal="sondaggiGoals.mediaRisposte"
@@ -49,7 +43,7 @@
       <div class="col-span-12">
         <analytics-chart
           title="Andamento sondaggi"
-          description="Risposte e completion rate"
+          description="Risposte"
           :series="performanceSeries"
         />
       </div>
@@ -112,24 +106,20 @@ const sondaggiGoals = computed(() => {
   return {
     numeroSondaggi: goalFor('surveys-count', goals.value.sondaggi.numeroSondaggi),
     risposteTotali: goalFor('surveys-total-responses', goals.value.sondaggi.risposteTotali),
-    completionRate: goalFor('surveys-completion-rate', goals.value.sondaggi.completionRate),
     mediaRisposte: goalFor('surveys-average-responses', goals.value.sondaggi.mediaRisposte),
   }
 })
 const sondaggiCurrent = computed(() => {
   const countObj = objectives.value.find((o) => o.id === 'surveys-count')
   const totalRespObj = objectives.value.find((o) => o.id === 'surveys-total-responses')
-  const completionObj = objectives.value.find((o) => o.id === 'surveys-completion-rate')
   const avgRespObj = objectives.value.find((o) => o.id === 'surveys-average-responses')
 
   const countUnit = countObj?.unit ?? ''
   const totalRespUnit = totalRespObj?.unit ?? ''
-  const completionUnit = completionObj?.unit ?? '%'
   const avgRespUnit = avgRespObj?.unit ?? ''
 
   const countRaw = stats.value?.surveysCount ?? 0
   const totalResponsesRaw = stats.value?.totalResponses ?? 0
-  const completionRateFraction = stats.value?.completionRate ?? 0
   const avgResponsesRaw = stats.value?.averageResponses ?? 0
 
   const count = denormalizeValue(countRaw, countUnit)
@@ -139,9 +129,6 @@ const sondaggiCurrent = computed(() => {
   return {
     numeroSondaggi: loading.value ? '...' : formatMetricValue(count, countUnit),
     risposteTotali: loading.value ? '...' : formatMetricValue(totalResponses, totalRespUnit),
-    completionRate: loading.value
-      ? '...'
-      : formatMetricValue(completionRateFraction * (completionUnit === '%' ? 100 : 1), completionUnit),
     mediaRisposte: loading.value ? '...' : formatMetricValue(avgResponses, avgRespUnit),
   }
 })
@@ -167,10 +154,6 @@ const performanceSeries = computed(() => [
   {
     name: 'Risposte',
     data: [stats.value?.totalResponses ?? 0],
-  },
-  {
-    name: 'Completion %',
-    data: [Math.round((stats.value?.completionRate ?? 0) * 100)],
   },
 ])
 </script>

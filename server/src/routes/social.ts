@@ -38,6 +38,7 @@ type SocialSummaryData = {
   sharesTotal: number
   commentsTotal: number
   engagementRateTotalPercent: number
+  postsCount: number
 }
 
 const router = Router()
@@ -73,11 +74,12 @@ function denomForAudience(a: SocialAggregate): number {
 router.get('/summary', async (_req: Request, res: Response) => {
   const timeoutMs = 15000
   try {
-    const [fbResp, ytResp, igResp, otherResp] = await Promise.all([
+    const [fbResp, ytResp, igResp, otherResp, postsCountRaw] = await Promise.all([
       fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/facebook/stats', timeoutMs).catch(() => null),
       fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/youtube/stats', timeoutMs).catch(() => null),
       fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/instagram/stats', timeoutMs).catch(() => null),
       fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/other/stats', timeoutMs).catch(() => null),
+      fetchJson<number>('/api/v1/social/post/count', timeoutMs).catch(() => 0),
     ])
 
     const fb = fbResp?.success ? (fbResp.data as SocialAggregate | null) : null
@@ -111,6 +113,7 @@ router.get('/summary', async (_req: Request, res: Response) => {
       sharesTotal,
       commentsTotal,
       engagementRateTotalPercent,
+      postsCount: safeNumber(postsCountRaw),
     }
 
     res.json({ success: true, data } satisfies ApiResponse<SocialSummaryData>)

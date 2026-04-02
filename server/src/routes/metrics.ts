@@ -8,6 +8,7 @@ declare const fetch: (
   options?: {
     method?: string
     headers?: Record<string, string>
+    signal?: AbortSignal
   }
 ) => Promise<{
   ok: boolean
@@ -152,6 +153,7 @@ interface SocialAggregates {
   audienceTotal: number
   sharesTotal: number
   commentsTotal: number
+  postsCount: number
 }
 
 interface VideoAggregates {
@@ -335,27 +337,109 @@ async function getSondaggiAggregates(): Promise<SondaggiAggregates | null> {
 }
 
 async function getSocialAggregates(): Promise<SocialAggregates | null> {
-  const path = `/api/v1/social/summary`
-  const resp = await fetchJson<{ success?: boolean; data?: {
-    interactionsTotal: number
-    audienceTotal: number
-    viewsTotal: number
-    sharesTotal: number
-    commentsTotal: number
-    engagementRateTotalPercent: number
-  } }>(path)
-
-  if (!resp?.success || !resp.data) {
-    return null
+  // Il Data API NON espone `/api/v1/social/summary`, quindi calcoliamo qui
+  // gli aggregati usando le rotte social raw.
+  type SocialAggregate = {
+    total_engagements?: number
+    total_reach?: number
+    total_views?: number
+    total_shares?: number
+    total_comments?: number
   }
 
-  const data = resp.data
+  const safeNumber = (v: unknown): number => {
+    const n = typeof v === 'number' ? v : Number(v)
+    return Number.isFinite(n) ? n : 0
+  }
+
+  const denomForAudience = (a: SocialAggregate): number => {
+    const reach = safeNumber(a.total_reach)
+    if (reach > 0) return reach
+    return safeNumber(a.total_views)
+  }
+
+  type ApiResponse<T> = {
+    success?: boolean
+    data?: T | null
+  }
+
+  const timeoutMs = 15000
+  const fetchJsonWithTimeout = async <T,>(path: string): Promise<T | null> => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const url = `${DATA_API_BASE_URL}${path}`
+      const res = await fetch(url, { signal: controller.signal })
+      if (!res.ok) return null
+      const json = (await res.json()) as ApiResponse<T>
+      return json?.success ? (json.data as T | null) : null
+    } catch {
+      return null
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  const [fb, yt, ig, other] = await Promise.all([
+    fetchJsonWithTimeout<SocialAggregate>('/api/v1/social/facebook/stats'),
+    fetchJsonWithTimeout<SocialAggregate>('/api/v1/social/youtube/stats'),
+    fetchJsonWithTimeout<SocialAggregate>('/api/v1/social/instagram/stats'),
+    fetchJsonWithTimeout<SocialAggregate>('/api/v1/social/other/stats'),
+  ])
+
+  const fetchNumberWithTimeout = async (path: string): Promise<number> => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const url = `${DATA_API_BASE_URL}${path}`
+      const res = await fetch(url, { signal: controller.signal })
+      if (!res.ok) return 0
+      const n = await res.json()
+      return safeNumber(n)
+    } catch {
+      return 0
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  const postsCount = await fetchNumberWithTimeout('/api/v1/social/post/count')
+
+  const all = [fb, yt, ig, other].filter(Boolean) as SocialAggregate[]
+  if (all.length === 0) {
+    return {
+      engagementRatePercent: 0,
+      viewsTotal: 0,
+      audienceTotal: 0,
+      sharesTotal: 0,
+      commentsTotal: 0,
+      postsCount,
+    }
+  }
+
+  let interactionsTotal = 0
+  let viewsTotal = 0
+  let audienceTotal = 0
+  let sharesTotal = 0
+  let commentsTotal = 0
+
+  for (const a of all) {
+    interactionsTotal += safeNumber(a.total_engagements)
+    viewsTotal += safeNumber(a.total_views)
+    audienceTotal += denomForAudience(a)
+    sharesTotal += safeNumber(a.total_shares)
+    commentsTotal += safeNumber(a.total_comments)
+  }
+
+  const engagementRateTotalPercent = audienceTotal > 0 ? (interactionsTotal / audienceTotal) * 100 : 0
+
   return {
-    engagementRatePercent: data.engagementRateTotalPercent || 0,
-    viewsTotal: data.viewsTotal || 0,
-    audienceTotal: data.audienceTotal || 0,
-    sharesTotal: data.sharesTotal || 0,
-    commentsTotal: data.commentsTotal || 0,
+    engagementRatePercent: engagementRateTotalPercent,
+    viewsTotal,
+    audienceTotal,
+    sharesTotal,
+    commentsTotal,
+    postsCount,
   }
 }
 
@@ -467,9 +551,6 @@ async function handleSummary(_req: Request, res: Response) {
           case 'surveys-total-responses':
             current = sondaggiAgg.totalResponses
             break
-          case 'surveys-completion-rate':
-            current = sondaggiAgg.completionRateFraction
-            break
           case 'surveys-average-responses':
             current = sondaggiAgg.averageResponses
             break
@@ -478,6 +559,9 @@ async function handleSummary(_req: Request, res: Response) {
         }
       } else if (obj.category === 'social' && socialAgg) {
         switch (obj.id) {
+          case 'social-posts-count':
+            current = socialAgg.postsCount
+            break
           case 'social-engagement-rate':
             // obiettivo memorizzato come frazione (0–1), API restituisce percentuale
             current = (socialAgg.engagementRatePercent || 0) / 100

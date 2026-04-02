@@ -19,8 +19,12 @@ export function seed(db: Database.Database) {
     insertPage.run(p)
   }
 
+  // Rimuove indicatori non presenti nel documento indicatori/output
+  // (evita che restino visibili anche se il DB era già stato inizializzato)
+  db.prepare('DELETE FROM objectives WHERE id = ?').run('surveys-completion-rate')
+
   const objCount = db.prepare('SELECT COUNT(*) as c FROM objectives').get() as { c: number }
-  if (objCount.c > 0) return
+  // Prosegui: inseriamo solo gli obiettivi mancanti (INSERT OR IGNORE).
 
   const objectives = [
     // Newsletter
@@ -38,6 +42,7 @@ export function seed(db: Database.Database) {
 
     // Social
     { id: 'social-engagement-rate', title: 'Engagement rate (calcolato)', category: 'social', path: '/social', value: 0.05, unit: '%' },
+    { id: 'social-posts-count', title: 'Numero post', category: 'social', path: '/social', value: 306, unit: '' },
     { id: 'social-views', title: 'Views', category: 'social', path: '/social', value: 2_000_000, unit: 'M' },
     { id: 'social-audience', title: 'Audience', category: 'social', path: '/social', value: 500_000, unit: 'K' },
     { id: 'social-shares', title: 'Condivisioni', category: 'social', path: '/social', value: 10_000, unit: 'K' },
@@ -52,11 +57,10 @@ export function seed(db: Database.Database) {
     // Sondaggi
     { id: 'surveys-count', title: 'Numero sondaggi', category: 'sondaggi', path: '/sondaggi', value: 10, unit: '' },
     { id: 'surveys-total-responses', title: 'Risposte totali', category: 'sondaggi', path: '/sondaggi', value: 20_000, unit: 'K' },
-    { id: 'surveys-completion-rate', title: 'Completion rate', category: 'sondaggi', path: '/sondaggi', value: 0.5, unit: '%' },
     { id: 'surveys-average-responses', title: 'Media risposte sondaggio', category: 'sondaggi', path: '/sondaggi', value: 50, unit: '' },
   ]
   const insertObj = db.prepare(
-    'INSERT INTO objectives (id, title, category, path, value, unit) VALUES (?, ?, ?, ?, ?, ?)'
+    'INSERT OR IGNORE INTO objectives (id, title, category, path, value, unit) VALUES (?, ?, ?, ?, ?, ?)'
   )
   for (const o of objectives) {
     insertObj.run(o.id, o.title, o.category, o.path, o.value, o.unit)

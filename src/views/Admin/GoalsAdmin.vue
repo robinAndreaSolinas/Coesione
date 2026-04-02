@@ -25,7 +25,7 @@
               <label class="mb-1 block text-xs text-gray-500">Valore</label>
               <input
                 type="number"
-                step="any"
+                :step="obj.unit === '%' ? 1 : 'any'"
                 :value="obj.value"
                 @input="onValueInput(obj, ($event.target as HTMLInputElement).value)"
                 class="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
@@ -99,14 +99,15 @@ function fromBase(base: number, unit: string): number {
 function onValueInput(obj: Objective, value: string) {
   const num = parseFloat(value)
   if (isNaN(num)) return
-  obj.value = num
+  obj.value = obj.unit === '%' ? Math.round(num) : num
   debouncedSave(obj)
 }
 
 function onUnitChange(obj: Objective, unit: string) {
   // converte il valore mantenendo la metrica assoluta
   const base = toBase(obj.value, obj.unit)
-  obj.value = fromBase(base, unit)
+  const converted = fromBase(base, unit)
+  obj.value = unit === '%' ? Math.round(converted) : converted
   obj.unit = unit
   debouncedSave(obj)
 }

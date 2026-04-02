@@ -81,6 +81,7 @@ export interface SocialSummaryData {
   sharesTotal: number
   commentsTotal: number
   engagementRateTotalPercent: number
+  postsCount: number
 }
 
 export interface ApiMetricSummary {
