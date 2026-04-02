@@ -19,7 +19,8 @@ interface RawVideoStat {
   date: string
   stream: number
   estimated_earings: number
-  vth: number
+  vth?: number
+  view_through_rate?: number
   watched_seconds: number
 }
 
@@ -81,16 +82,23 @@ router.get('/stats', async (_req: Request, res: Response) => {
     let vthCount = 0
 
     const daily: VideoDailyPoint[] = rows.map((r) => {
+      const vthValue =
+        typeof r.view_through_rate === 'number'
+          ? r.view_through_rate
+          : typeof r.vth === 'number'
+            ? r.vth
+            : 0
       totalStreams += r.stream
       totalWatchedSeconds += r.watched_seconds
-      if (typeof r.vth === 'number') {
-        vthSum += r.vth
+      if (Number.isFinite(vthValue)) {
+        vthSum += vthValue
         vthCount += 1
       }
+      
       return {
         date: r.date,
         stream: r.stream,
-        vth: r.vth,
+        vth: vthValue,
         watchedSeconds: r.watched_seconds,
       }
     })

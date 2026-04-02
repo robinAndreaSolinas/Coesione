@@ -14,6 +14,11 @@
           :value="minutesLabel"
           :goal="videoGoals.minuti"
         />
+        <metric-card
+          label="Completion rate"
+          :value="completionRateLabel"
+          :goal="videoGoals.completionRate"
+        />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
@@ -93,6 +98,7 @@ const videoGoals = computed(() => {
   return {
     audience: goalFor('video-audience', goals.value.video.audience),
     minuti: goalFor('video-minutes-watched', goals.value.video.minuti),
+    completionRate: goalFor('video-completion-rate', goals.value.video.completionRate),
   }
 })
 
@@ -106,6 +112,7 @@ const videoUnits = computed(() => {
   return {
     audience: byId.get('video-audience')?.unit ?? '',
     minuti: byId.get('video-minutes-watched')?.unit ?? '',
+    completionRate: byId.get('video-completion-rate')?.unit ?? '%',
   }
 })
 
@@ -122,6 +129,9 @@ const audienceValue = computed(() =>
 const minutesWatchedValue = computed(() =>
   denormalizeValue(stats.value?.minutesWatched ?? 0, videoUnits.value.minuti || '')
 )
+const completionRateValue = computed(() =>
+  denormalizeValue(stats.value?.vthAvg ?? 0, videoUnits.value.completionRate || '%')
+)
 
 const audienceLabel = computed(() =>
   loading.value
@@ -132,6 +142,11 @@ const minutesLabel = computed(() =>
   loading.value
     ? '...'
     : formatMetricValue(minutesWatchedValue.value, videoUnits.value.minuti || '')
+)
+const completionRateLabel = computed(() =>
+  loading.value
+    ? '...'
+    : formatMetricValue(completionRateValue.value, videoUnits.value.completionRate || '%')
 )
 const videoTargetPercent = computed(() => {
   const raw = goals.value.video.target || '100'
