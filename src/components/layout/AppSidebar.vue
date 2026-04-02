@@ -212,7 +212,7 @@ const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 const { isAuthenticated, currentUser } = useAuth();
 
 const effectiveExpanded = computed(
-  () => isAuthenticated.value && isExpanded.value
+  () => isExpanded.value || isHovered.value || isMobileOpen.value
 );
 const { getSettings } = useAdminVisibility();
 

@@ -108,10 +108,10 @@ import { useAdminVisibility } from '@/composables/useAdminVisibility'
 
 const { isExpanded, isHovered } = useSidebar()
 const route = useRoute()
-const { isAuthenticated, currentUser } = useAuth()
+const { currentUser } = useAuth()
 
 const effectiveExpanded = computed(
-  () => isAuthenticated.value && isExpanded.value
+  () => isExpanded.value || isHovered.value
 )
 const { getSettings, setPublic, setVisibleForUsers } = useAdminVisibility()
 
