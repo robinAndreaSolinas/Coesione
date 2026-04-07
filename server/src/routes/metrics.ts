@@ -342,10 +342,12 @@ async function getSocialAggregates(): Promise<SocialAggregates | null> {
   // gli aggregati usando le rotte social raw.
   type SocialAggregate = {
     total_engagements?: number
+    total_interaction?: number
     total_reach?: number
     total_views?: number
     total_shares?: number
     total_comments?: number
+    engagement_rate?: number
   }
 
   const safeNumber = (v: unknown): number => {
@@ -381,11 +383,11 @@ async function getSocialAggregates(): Promise<SocialAggregates | null> {
     }
   }
 
-  const [fb, yt, ig, other] = await Promise.all([
+  const [fb, yt, ig, tt] = await Promise.all([
     fetchJsonWithTimeout<SocialAggregate>('/api/v1/social/facebook/stats'),
     fetchJsonWithTimeout<SocialAggregate>('/api/v1/social/youtube/stats'),
     fetchJsonWithTimeout<SocialAggregate>('/api/v1/social/instagram/stats'),
-    fetchJsonWithTimeout<SocialAggregate>('/api/v1/social/other/stats'),
+    fetchJsonWithTimeout<SocialAggregate>('/api/v1/social/tiktok/stats'),
   ])
 
   const fetchNumberWithTimeout = async (path: string): Promise<number> => {
@@ -406,7 +408,7 @@ async function getSocialAggregates(): Promise<SocialAggregates | null> {
 
   const postsCount = await fetchNumberWithTimeout('/api/v1/social/post/count')
 
-  const all = [fb, yt, ig, other].filter(Boolean) as SocialAggregate[]
+  const all = [fb, yt, ig, tt].filter(Boolean) as SocialAggregate[]
   if (all.length === 0) {
     return {
       engagementRatePercent: 0,
@@ -432,7 +434,15 @@ async function getSocialAggregates(): Promise<SocialAggregates | null> {
     commentsTotal += safeNumber(a.total_comments)
   }
 
-  const engagementRateTotalPercent = audienceTotal > 0 ? (interactionsTotal / audienceTotal) * 100 : 0
+  const explicitErRates = all
+    .map((a) => (typeof a.engagement_rate === 'number' ? a.engagement_rate * 100 : null))
+    .filter((v): v is number => v !== null)
+  const engagementRateTotalPercent =
+    explicitErRates.length > 0
+      ? explicitErRates.reduce((s, v) => s + v, 0) / explicitErRates.length
+      : audienceTotal > 0
+        ? (interactionsTotal / audienceTotal) * 100
+        : 0
 
   return {
     engagementRatePercent: engagementRateTotalPercent,

@@ -85,6 +85,18 @@ export interface SocialSummaryData {
   postsCount: number
 }
 
+export interface SocialPlatformPoint {
+  reach: number
+  engagementRatePercent: number
+}
+
+export interface SocialPlatformsData {
+  facebook: SocialPlatformPoint
+  instagram: SocialPlatformPoint
+  youtube: SocialPlatformPoint
+  tiktok: SocialPlatformPoint
+}
+
 export interface ApiMetricSummary {
   category: string
   key: string
@@ -192,6 +204,7 @@ export const api = {
   },
   social: {
     summary: () => request<{ success: boolean; data: SocialSummaryData }>('/social/summary'),
+    platforms: () => request<{ success: boolean; data: SocialPlatformsData }>('/social/platforms'),
   },
   metrics: {
     summary: () => request<ApiMetricSummary[]>('/metrics/summary'),

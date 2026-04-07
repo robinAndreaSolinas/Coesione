@@ -25,10 +25,12 @@ type ApiResponse<T> = {
 
 type SocialAggregate = {
   total_engagements?: number
+  total_interaction?: number
   total_reach?: number
   total_views?: number
   total_shares?: number
   total_comments?: number
+  engagement_rate?: number
 }
 
 type SocialSummaryData = {
@@ -39,6 +41,18 @@ type SocialSummaryData = {
   commentsTotal: number
   engagementRateTotalPercent: number
   postsCount: number
+}
+
+type SocialPlatformPoint = {
+  reach: number
+  engagementRatePercent: number
+}
+
+type SocialPlatformsData = {
+  facebook: SocialPlatformPoint
+  instagram: SocialPlatformPoint
+  youtube: SocialPlatformPoint
+  tiktok: SocialPlatformPoint
 }
 
 const router = Router()
@@ -71,23 +85,37 @@ function denomForAudience(a: SocialAggregate): number {
   return safeNumber(a.total_views)
 }
 
+function toPlatformPoint(a: SocialAggregate | null): SocialPlatformPoint {
+  if (!a) return { reach: 0, engagementRatePercent: 0 }
+  const reach = denomForAudience(a)
+  const engagements = safeNumber(a.total_engagements)
+  const interaction = safeNumber(a.total_interaction)
+  const engagementRatePercent =
+    typeof a.engagement_rate === 'number'
+      ? a.engagement_rate * 100
+      : reach > 0
+        ? (Math.max(engagements, interaction) / reach) * 100
+        : 0
+  return { reach, engagementRatePercent }
+}
+
 router.get('/summary', async (_req: Request, res: Response) => {
   const timeoutMs = 15000
   try {
-    const [fbResp, ytResp, igResp, otherResp, postsCountRaw] = await Promise.all([
+    const [fbResp, ytResp, igResp, ttResp, postsCountRaw] = await Promise.all([
       fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/facebook/stats', timeoutMs).catch(() => null),
       fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/youtube/stats', timeoutMs).catch(() => null),
       fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/instagram/stats', timeoutMs).catch(() => null),
-      fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/other/stats', timeoutMs).catch(() => null),
+      fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/tiktok/stats', timeoutMs).catch(() => null),
       fetchJson<number>('/api/v1/social/post/count', timeoutMs).catch(() => 0),
     ])
 
     const fb = fbResp?.success ? (fbResp.data as SocialAggregate | null) : null
     const yt = ytResp?.success ? (ytResp.data as SocialAggregate | null) : null
     const ig = igResp?.success ? (igResp.data as SocialAggregate | null) : null
-    const other = otherResp?.success ? (otherResp.data as SocialAggregate | null) : null
+    const tt = ttResp?.success ? (ttResp.data as SocialAggregate | null) : null
 
-    const all: SocialAggregate[] = [fb, yt, ig, other].filter(Boolean) as SocialAggregate[]
+    const all: SocialAggregate[] = [fb, yt, ig, tt].filter(Boolean) as SocialAggregate[]
 
     let interactionsTotal = 0
     let viewsTotal = 0
@@ -122,6 +150,36 @@ router.get('/summary', async (_req: Request, res: Response) => {
       success: false,
       error: e instanceof Error ? e.message : 'Errore',
     } satisfies ApiResponse<SocialSummaryData>)
+  }
+})
+
+router.get('/platforms', async (_req: Request, res: Response) => {
+  const timeoutMs = 15000
+  try {
+    const [fbResp, ytResp, igResp, ttResp] = await Promise.all([
+      fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/facebook/stats', timeoutMs).catch(() => null),
+      fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/youtube/stats', timeoutMs).catch(() => null),
+      fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/instagram/stats', timeoutMs).catch(() => null),
+      fetchJson<ApiResponse<SocialAggregate>>('/api/v1/social/tiktok/stats', timeoutMs).catch(() => null),
+    ])
+
+    const fb = fbResp?.success ? (fbResp.data as SocialAggregate | null) : null
+    const yt = ytResp?.success ? (ytResp.data as SocialAggregate | null) : null
+    const ig = igResp?.success ? (igResp.data as SocialAggregate | null) : null
+    const tt = ttResp?.success ? (ttResp.data as SocialAggregate | null) : null
+
+    const data: SocialPlatformsData = {
+      facebook: toPlatformPoint(fb),
+      instagram: toPlatformPoint(ig),
+      youtube: toPlatformPoint(yt),
+      tiktok: toPlatformPoint(tt),
+    }
+    res.json({ success: true, data } satisfies ApiResponse<SocialPlatformsData>)
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      error: e instanceof Error ? e.message : 'Errore',
+    } satisfies ApiResponse<SocialPlatformsData>)
   }
 })
 

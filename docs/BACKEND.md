@@ -100,3 +100,16 @@ Porta: 3001 (configurabile con `PORT`)
 - `PORT` — Porta server (default 3001)
 - `DB_PATH` — Path file SQLite (default: `./data/coesione.sqlite3`)
 - `JWT_SECRET` — Secret per JWT (default: dev secret)
+
+## Regola conversione unita' (obbligatoria)
+
+TUTTI i dati numerici provenienti da API esterne devono essere convertiti in base all'unita' dell'obiettivo/metrica prima della visualizzazione:
+
+- `%` -> valore visuale = `raw * 100`
+- `K` -> valore visuale = `raw / 1_000`
+- `M` -> valore visuale = `raw / 1_000_000`
+- unita' vuota -> valore visuale = `raw`
+
+La stessa regola vale per card, grafici, progress e summary in ogni sezione dashboard.
+
+Regola di arrotondamento: visualizzazione sempre arrotondata a 1 cifra decimale.
