@@ -42,6 +42,7 @@ export interface VideoStatsPayload {
   audience: number
   minutesWatched: number
   vthAvg: number
+  audiovisualCount: number
   daily: VideoDailyPoint[]
 }
 
@@ -68,6 +69,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
     const { start, end } = getDateRange()
     const path = `/api/v1/video/stats?from_date=${start}&to_date=${end}`
     const resp = await fetchJson<RawVideoStatsResponse>(path)
+    const audiovisualCount = await fetchJson<number>('/api/v1/video/count').catch(() => 0)
 
     if (!resp.success || !Array.isArray(resp.data)) {
       res.status(502).json({ error: 'Risposta non valida dal data API' })
@@ -110,6 +112,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
       audience: totalStreams,
       minutesWatched,
       vthAvg,
+      audiovisualCount: Number(audiovisualCount) || 0,
       daily,
     }
 

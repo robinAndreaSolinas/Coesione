@@ -68,6 +68,7 @@ export interface VideoDailyPoint {
 }
 
 export interface VideoStats {
+  audiovisualCount: number
   audience: number
   minutesWatched: number
   vthAvg: number

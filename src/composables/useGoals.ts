@@ -28,6 +28,7 @@ const defaultGoals: GoalsState = {
     targetPercent: '100',
   },
   video: {
+    audiovisualCount: '12',
     audience: '200K',
     minuti: '1M',
     completionRate: '70%',

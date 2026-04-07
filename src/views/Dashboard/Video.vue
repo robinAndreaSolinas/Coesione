@@ -5,6 +5,11 @@
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
         <metric-card
+          label="Numero di Audiovisual"
+          :value="audiovisualLabel"
+          :goal="videoGoals.audiovisualCount"
+        />
+        <metric-card
           label="Stream"
           :value="audienceLabel"
           :goal="videoGoals.audience"
@@ -96,6 +101,7 @@ const videoGoals = computed(() => {
   }
 
   return {
+    audiovisualCount: goalFor('video-audiovisual-count', goals.value.video.audiovisualCount),
     audience: goalFor('video-audience', goals.value.video.audience),
     minuti: goalFor('video-minutes-watched', goals.value.video.minuti),
     completionRate: goalFor('video-completion-rate', goals.value.video.completionRate),
@@ -110,6 +116,7 @@ const videoUnits = computed(() => {
   )
 
   return {
+    audiovisualCount: byId.get('video-audiovisual-count')?.unit ?? '',
     audience: byId.get('video-audience')?.unit ?? '',
     minuti: byId.get('video-minutes-watched')?.unit ?? '',
     completionRate: byId.get('video-completion-rate')?.unit ?? '%',
@@ -123,6 +130,9 @@ function denormalizeValue(value: number, unit: string): number {
   return value
 }
 
+const audiovisualCountValue = computed(() =>
+  denormalizeValue(stats.value?.audiovisualCount ?? 0, videoUnits.value.audiovisualCount || '')
+)
 const audienceValue = computed(() =>
   denormalizeValue(stats.value?.audience ?? 0, videoUnits.value.audience || '')
 )
@@ -133,6 +143,11 @@ const completionRateValue = computed(() =>
   denormalizeValue(stats.value?.vthAvg ?? 0, videoUnits.value.completionRate || '%')
 )
 
+const audiovisualLabel = computed(() =>
+  loading.value
+    ? '...'
+    : formatMetricValue(audiovisualCountValue.value, videoUnits.value.audiovisualCount || '')
+)
 const audienceLabel = computed(() =>
   loading.value
     ? '...'

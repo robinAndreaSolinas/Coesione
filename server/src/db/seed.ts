@@ -50,6 +50,7 @@ export function seed(db: Database.Database) {
     { id: 'social-reach', title: 'Reach', category: 'social', path: '/social', value: 3_000_000, unit: 'M' },
 
     // Video
+    { id: 'video-audiovisual-count', title: 'Numero di Audiovisual', category: 'video', path: '/video', value: 12, unit: '' },
     { id: 'video-audience', title: 'Audience', category: 'video', path: '/video', value: 200_000, unit: 'K' },
     { id: 'video-minutes-watched', title: 'Minuti guardati', category: 'video', path: '/video', value: 1_000_000, unit: 'M' },
     { id: 'video-completion-rate', title: 'Completion rate', category: 'video', path: '/video', value: 0.6, unit: '%' },

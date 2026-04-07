@@ -160,6 +160,7 @@ interface VideoAggregates {
   audience: number
   minutesWatched: number
   completionRateFraction: number
+  audiovisualCount: number
 }
 
 interface LogoraStats {
@@ -445,7 +446,7 @@ async function getSocialAggregates(): Promise<SocialAggregates | null> {
 
 async function getVideoAggregates(start: string, end: string): Promise<VideoAggregates | null> {
   const path = `/api/v1/video/stats?from_date=${start}&to_date=${end}`
-  const resp = await fetchJson<{ audience: number; minutesWatched: number; vthAvg: number }>(path)
+  const resp = await fetchJson<{ audience: number; minutesWatched: number; vthAvg: number; audiovisualCount?: number }>(path)
 
   if (!resp) {
     return null
@@ -455,6 +456,7 @@ async function getVideoAggregates(start: string, end: string): Promise<VideoAggr
     audience: Number(resp.audience) || 0,
     minutesWatched: Number(resp.minutesWatched) || 0,
     completionRateFraction: Number(resp.vthAvg) || 0,
+    audiovisualCount: Number(resp.audiovisualCount) || 0,
   }
 }
 
@@ -586,6 +588,9 @@ async function handleSummary(_req: Request, res: Response) {
         }
       } else if (obj.category === 'video' && videoAgg) {
         switch (obj.id) {
+          case 'video-audiovisual-count':
+            current = videoAgg.audiovisualCount
+            break
           case 'video-audience':
             current = videoAgg.audience
             break
