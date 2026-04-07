@@ -17,7 +17,24 @@
       />
     </div>
     <div class="mt-8 space-y-6">
-      <objective-pie-chart :data="progressByCategory" />
+      <div
+        class="rounded-2xl border border-gray-200 bg-white px-5 pb-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6"
+      >
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+          Raggiungimento complessivo obiettivi
+        </h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Goal raggiunti vs non raggiunti su tutte le sezioni
+        </p>
+        <div class="mt-6">
+          <VueApexCharts
+            type="pie"
+            height="300"
+            :options="overallPieOptions"
+            :series="overallPieSeries"
+          />
+        </div>
+      </div>
       <div>
         <h2 class="text-base font-semibold text-gray-800 dark:text-white/90">
           Dettaglio per categoria
@@ -43,15 +60,15 @@ import { computed } from 'vue'
 import { useObjectives } from '@/composables/useObjectives'
 import { useCategoryProgress } from '@/composables/useCategoryProgress'
 import { useMetrics } from '@/composables/useMetrics'
+import VueApexCharts from 'vue3-apexcharts'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ObjectiveCard from '@/components/dashboard/ObjectiveCard.vue'
-import ObjectivePieChart from '@/components/dashboard/ObjectivePieChart.vue'
 import CategoryProgressCard from '@/components/dashboard/CategoryProgressCard.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
 
 const { objectives } = useObjectives()
-const { progressByCategory } = useCategoryProgress()
+const { progressByCategory, overallGoalsStats } = useCategoryProgress()
 const { metricsForView } = useMetrics()
 
 const metricByKeyObj = computed(() => {
@@ -61,6 +78,27 @@ const metricByKeyObj = computed(() => {
   }
   return obj
 })
+
+const overallPieSeries = computed(() => [
+  overallGoalsStats.value.reachedGoals,
+  overallGoalsStats.value.notReachedGoals,
+])
+
+const overallPieOptions = computed(() => ({
+  chart: { fontFamily: 'Outfit, sans-serif' },
+  labels: ['Raggiunti', 'Non raggiunti'],
+  colors: ['#22C55E', '#EF4444'],
+  legend: { position: 'bottom' as const },
+  dataLabels: {
+    enabled: true,
+    formatter: (val: number) => `${Math.round(val)}%`,
+  },
+  tooltip: {
+    y: {
+      formatter: (val: number) => `${Math.round(val)} goal`,
+    },
+  },
+}))
 
 function metricIconBg(category: string) {
   const map: Record<string, string> = {

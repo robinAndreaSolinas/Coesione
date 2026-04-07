@@ -163,6 +163,14 @@ interface VideoAggregates {
   audiovisualCount: number
 }
 
+interface RawVideoStat {
+  date: string
+  stream: number
+  watched_seconds: number
+  vth?: number
+  view_through_rate?: number
+}
+
 interface LogoraStats {
   cohesion_sources: number
   total_groups: number
@@ -456,17 +464,58 @@ async function getSocialAggregates(): Promise<SocialAggregates | null> {
 
 async function getVideoAggregates(start: string, end: string): Promise<VideoAggregates | null> {
   const path = `/api/v1/video/stats?from_date=${start}&to_date=${end}`
-  const resp = await fetchJson<{ audience: number; minutesWatched: number; vthAvg: number; audiovisualCount?: number }>(path)
+  const resp = await fetchJson<
+    | { audience: number; minutesWatched: number; vthAvg: number; audiovisualCount?: number }
+    | { success?: boolean; data?: RawVideoStat[] | null }
+  >(path)
 
   if (!resp) {
     return null
   }
 
+  const toNum = (v: unknown): number => {
+    const n = typeof v === 'number' ? v : Number(v)
+    return Number.isFinite(n) ? n : 0
+  }
+
+  // Caso 1: endpoint già aggregato (compatibilità)
+  if ('audience' in resp && 'minutesWatched' in resp && 'vthAvg' in resp) {
+    const countResp = await fetchJson<number>('/api/v1/video/count').catch(() => 0)
+    return {
+      audience: toNum(resp.audience),
+      minutesWatched: toNum(resp.minutesWatched),
+      completionRateFraction: toNum(resp.vthAvg),
+      audiovisualCount: toNum(resp.audiovisualCount) || toNum(countResp),
+    }
+  }
+
+  // Caso 2: payload raw Data API { success, data: [...] }
+  const rows = Array.isArray(resp.data) ? resp.data : []
+  let totalStreams = 0
+  let totalWatchedSeconds = 0
+  let vthSum = 0
+  let vthCount = 0
+  for (const r of rows) {
+    totalStreams += toNum(r.stream)
+    totalWatchedSeconds += toNum(r.watched_seconds)
+    const vth =
+      typeof r.view_through_rate === 'number'
+        ? r.view_through_rate
+        : typeof r.vth === 'number'
+          ? r.vth
+          : NaN
+    if (Number.isFinite(vth)) {
+      vthSum += vth
+      vthCount += 1
+    }
+  }
+  const countResp = await fetchJson<number>('/api/v1/video/count').catch(() => 0)
+
   return {
-    audience: Number(resp.audience) || 0,
-    minutesWatched: Number(resp.minutesWatched) || 0,
-    completionRateFraction: Number(resp.vthAvg) || 0,
-    audiovisualCount: Number(resp.audiovisualCount) || 0,
+    audience: totalStreams,
+    minutesWatched: totalWatchedSeconds / 60,
+    completionRateFraction: vthCount > 0 ? vthSum / vthCount : 0,
+    audiovisualCount: toNum(countResp),
   }
 }
 
