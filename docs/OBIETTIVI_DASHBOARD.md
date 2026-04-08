@@ -1,4 +1,5 @@
-## Mappatura indicatori progetto ↔ dashboard Coesione
+
+gi## Mappatura indicatori progetto ↔ dashboard Coesione
 
 | WP / Sezione        | Tipo       | Indicatore (dal PDF)                                                                                                                          | Target / Baseline (PDF)                               | Presente in dashboard? | Categoria dashboard | Obiettivo / metrica collegata                           | Note |
 |---------------------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|------------------------|---------------------|----------------------------------------------------------|------|
