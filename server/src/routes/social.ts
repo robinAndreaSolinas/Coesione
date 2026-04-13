@@ -117,22 +117,29 @@ router.get('/summary', async (_req: Request, res: Response) => {
 
     const all: SocialAggregate[] = [fb, yt, ig, tt].filter(Boolean) as SocialAggregate[]
 
-    let interactionsTotal = 0
-    let viewsTotal = 0
-    let audienceTotal = 0
-    let sharesTotal = 0
-    let commentsTotal = 0
+    let interactionsSum = 0
+    let viewsSum = 0
+    let audienceSum = 0
+    let audienceCount = 0
+    let sharesSum = 0
+    let commentsSum = 0
 
     for (const a of all) {
-      interactionsTotal += safeNumber(a.total_engagements)
-      viewsTotal += safeNumber(a.total_views)
-      audienceTotal += denomForAudience(a)
-      sharesTotal += safeNumber(a.total_shares)
-      commentsTotal += safeNumber(a.total_comments)
+      interactionsSum += safeNumber(a.total_engagements)
+      viewsSum += safeNumber(a.total_views)
+      audienceSum += denomForAudience(a)
+      audienceCount += 1
+      sharesSum += safeNumber(a.total_shares)
+      commentsSum += safeNumber(a.total_comments)
     }
 
+    const interactionsTotal = audienceCount > 0 ? interactionsSum / audienceCount : 0
+    const viewsTotal = audienceCount > 0 ? viewsSum / audienceCount : 0
+    const audienceTotal = audienceCount > 0 ? audienceSum / audienceCount : 0
+    const sharesTotal = audienceCount > 0 ? sharesSum / audienceCount : 0
+    const commentsTotal = audienceCount > 0 ? commentsSum / audienceCount : 0
     const engagementRateTotalPercent =
-      audienceTotal > 0 ? (interactionsTotal / audienceTotal) * 100 : 0
+      audienceSum > 0 ? (interactionsTotal / audienceSum) * 100 : 0
 
     const data: SocialSummaryData = {
       interactionsTotal,

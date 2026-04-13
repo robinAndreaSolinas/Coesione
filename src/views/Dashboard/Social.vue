@@ -17,9 +17,9 @@
           :trend="null"
         />
         <metric-card
-          label="Audience"
-          :value="socialCurrent.audience"
-          :goal="socialGoals.audience"
+          label="Reach"
+          :value="socialCurrent.reach"
+          :goal="socialGoals.reach"
           :trend="null"
         />
         <metric-card
@@ -104,7 +104,7 @@ const socialGoals = computed(() => {
   return {
     engagementRate: goalFor('social-engagement-rate', goals.value.social.engagementRate),
     views: goalFor('social-views', goals.value.social.views),
-    audience: goalFor('social-audience', goals.value.social.audience),
+    reach: goalFor('social-reach', goals.value.social.reach),
     condivisioni: goalFor('social-shares', goals.value.social.condivisioni),
     postsCount: goalFor('social-posts-count', goals.value.social.postsCount),
   }
@@ -150,12 +150,12 @@ const {
 const socialCurrent = computed(() => {
   const engagementObj = objectives.value.find((o) => o.id === 'social-engagement-rate')
   const viewsObj = objectives.value.find((o) => o.id === 'social-views')
-  const audienceObj = objectives.value.find((o) => o.id === 'social-audience')
+  const reachObj = objectives.value.find((o) => o.id === 'social-reach')
   const sharesObj = objectives.value.find((o) => o.id === 'social-shares')
 
   const engagementUnit = engagementObj?.unit ?? '%'
   const viewsUnit = viewsObj?.unit ?? 'M'
-  const audienceUnit = audienceObj?.unit ?? 'K'
+  const reachUnit = reachObj?.unit ?? 'K'
   const sharesUnit = sharesObj?.unit ?? 'K'
 
   const engagementRateRawLabel = formatCompact(
@@ -166,14 +166,14 @@ const socialCurrent = computed(() => {
   const engagementRate = formatCompact(engagementRateTotalPercent.value, '%')
 
   const views = formatCompact(denormalizeForDisplay(viewsTotal.value, viewsUnit), viewsUnit)
-  const audience = formatCompact(denormalizeForDisplay(audienceTotal.value, audienceUnit), audienceUnit)
+  const reach = formatCompact(denormalizeForDisplay(audienceTotal.value, reachUnit), reachUnit)
   const condivisioni = formatCompact(denormalizeForDisplay(sharesTotal.value, sharesUnit), sharesUnit)
   const posts = formatCompact(postsCount.value, objectives.value.find((o) => o.id === 'social-posts-count')?.unit ?? '')
 
   return {
     engagementRate,
     views,
-    audience,
+    reach,
     condivisioni,
     engagementRateRawLabel,
     posts,

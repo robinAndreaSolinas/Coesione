@@ -30,9 +30,9 @@
           title="Obiettivo visualizzazioni"
           description="Target visualizzazioni e minuti guardati"
           :progress="videoProgress"
-          :target-percent="videoTargetPercent"
-          :target-label="goals.video.target"
-          :current-label="`${videoProgress}%`"
+          :target-percent="100"
+          :target-label="videoGoals.completionRate"
+          :current-label="completionRateLabel"
           :progress-text="`Hai raggiunto circa ${videoProgress}% dell'obiettivo.`"
         />
       </div>
@@ -163,36 +163,56 @@ const completionRateLabel = computed(() =>
     ? '...'
     : formatMetricValue(completionRateValue.value, videoUnits.value.completionRate || '%')
 )
-const videoTargetPercent = computed(() => {
-  const raw = goals.value.video.target || '100'
-  const parsed = parseInt(raw.replace('%', ''), 10)
-  return Number.isNaN(parsed) ? 100 : parsed
+const completionRateGoalValue = computed(() => {
+  const obj = objectives.value.find((o) => o.id === 'video-completion-rate')
+  if (obj && obj.value > 0) return obj.value
+  const fallback = goals.value.video.completionRate || goals.value.video.target || '0'
+  const parsed = Number(String(fallback).replace('%', ''))
+  return Number.isFinite(parsed) ? parsed : 0
 })
 
 const videoProgress = computed(() => {
-  const current = (stats.value?.vthAvg ?? 0) * 100
-  return Math.max(0, Math.round(current))
+  const goal = completionRateGoalValue.value
+  if (goal <= 0) return 0
+  const current = completionRateValue.value
+  return Math.max(0, Math.min(999, Math.round((current / goal) * 100)))
 })
 
-const chartCategories = computed(() =>
-  stats.value?.daily.map((d) => d.date) ?? []
-)
+const monthlyBuckets = computed(() => {
+  const bucket = new Map<string, { stream: number; watchedMinutes: number }>()
+  for (const d of stats.value?.daily ?? []) {
+    const month = d.date.slice(0, 7) // YYYY-MM
+    const prev = bucket.get(month) ?? { stream: 0, watchedMinutes: 0 }
+    prev.stream += d.stream
+    prev.watchedMinutes += d.watchedSeconds / 60
+    bucket.set(month, prev)
+  }
+  return Array.from(bucket.entries())
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([month, values]) => ({
+      month,
+      stream: values.stream,
+      watchedMinutes: Math.round(values.watchedMinutes),
+    }))
+})
+
+const chartCategories = computed(() => monthlyBuckets.value.map((m) => m.month))
 
 const chartSeries = computed(() => [
   {
     name: 'Stream',
-    data: stats.value?.daily.map((d) => d.stream) ?? [],
+    data: monthlyBuckets.value.map((m) => m.stream),
   },
 ])
 
 const performanceSeries = computed(() => [
   {
     name: 'Stream',
-    data: stats.value?.daily.map((d) => d.stream) ?? [],
+    data: monthlyBuckets.value.map((m) => m.stream),
   },
   {
     name: 'Minuti guardati',
-    data: stats.value?.daily.map((d) => Math.round(d.watchedSeconds / 60)) ?? [],
+    data: monthlyBuckets.value.map((m) => m.watchedMinutes),
   },
 ])
 </script>
