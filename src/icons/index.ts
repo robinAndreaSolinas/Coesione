@@ -45,8 +45,14 @@ import LayoutDashboardIcon from "./LayoutDashboardIcon.vue";
 import UserGroupIcon from "./UserGroupIcon.vue";
 import BellIcon from "./BellIcon.vue";
 import BarChartIcon from "./BarChartIcon.vue";
+import CameraVideoIcon from "./CameraVideoIcon.vue";
+import GlobeIcon from "./GlobeIcon.vue";
+import SlidersDoubleIcon from "./SlidersDoubleIcon.vue";
 
 export {
+  SlidersDoubleIcon,
+  GlobeIcon,
+  CameraVideoIcon,
   BellIcon,
   BarChartIcon,
   LayoutDashboardIcon,

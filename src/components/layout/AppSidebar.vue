@@ -46,6 +46,7 @@
                 <button
                   v-if="item.subItems"
                   @click="toggleSubmenu(groupIndex, index)"
+                  :title="!(effectiveExpanded || isMobileOpen) ? item.name : ''"
                   :class="[
                     'menu-item group w-full',
                     {
@@ -87,6 +88,7 @@
                 <router-link
                   v-else-if="item.path"
                   :to="item.path"
+                  :title="!(effectiveExpanded || isMobileOpen) ? item.name : ''"
                   :class="[
                     'menu-item group',
                     {
@@ -195,10 +197,10 @@ import {
   GridIcon,
   ChatIcon,
   MailIcon,
-  DocsIcon,
-  PieChartIcon,
+  CameraVideoIcon,
+  SlidersDoubleIcon,
+  GlobeIcon,
   HorizontalDots,
-  PageIcon,
   SettingsIcon,
   ChevronDownIcon,
 } from "../../icons";
@@ -227,10 +229,10 @@ const menuGroups = [
     items: [
       { icon: GridIcon, name: "Totale", path: "/", pageKey: "Totale" },
       { icon: ChatIcon, name: "Social", path: "/social", pageKey: "Social" },
-      { icon: PieChartIcon, name: "Video", path: "/video", pageKey: "Video" },
+      { icon: CameraVideoIcon, name: "Video", path: "/video", pageKey: "Video" },
       { icon: MailIcon, name: "Newsletter", path: "/newsletter", pageKey: "Newsletter" },
-      { icon: PageIcon, name: "Analitiche Siti", path: "/siti", pageKey: "Siti" },
-      { icon: DocsIcon, name: "Sondaggi", path: "/sondaggi", pageKey: "Sondaggi" },
+      { icon: GlobeIcon, name: "Analitiche Siti", path: "/siti", pageKey: "Siti" },
+      { icon: SlidersDoubleIcon, name: "Sondaggi", path: "/sondaggi", pageKey: "Sondaggi" },
     ],
   },
   {
