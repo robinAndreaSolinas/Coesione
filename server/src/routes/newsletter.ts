@@ -84,6 +84,7 @@ async function getNewsletterStats(start: string, end: string): Promise<{
   let totalSent = 0
   let totalOpen = 0
   let totalClick = 0
+  let sentCount = 0
   let totalAddSubs = 0
   let totalDelSubs = 0
 
@@ -94,6 +95,9 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     totalSent += r.sent
     totalOpen += r.open
     totalClick += r.click
+    if (r.sent >= 100) {
+      sentCount += 1
+    }
     totalAddSubs += r.add_subs
     totalDelSubs += r.del_subs
 
@@ -138,7 +142,8 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     clickRate: Number((clickRateFraction * 100).toFixed(1)),
     subscribersTotal,
     subscribersActive,
-    sentTotal: totalSent,
+    // "Policy briefs e newsletter distribuiti": conta invii effettivi (sent >= 100)
+    sentTotal: sentCount,
     daily,
   }
 }

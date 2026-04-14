@@ -83,6 +83,7 @@ interface NewsletterAggregates {
   clickRateFraction: number
   subscribersTotal: number
   subscribersActive: number
+  sentCount: number
 }
 
 interface SiteTotalStats {
@@ -244,6 +245,7 @@ async function getNewsletterAggregates(start: string, end: string): Promise<News
 
   let subscribersTotal = 0
   let subscribersActive = 0
+  let sentCount = 0
 
   const statsRows = statsResp?.data
   if (Array.isArray(statsRows) && statsRows.length > 0) {
@@ -252,12 +254,15 @@ async function getNewsletterAggregates(start: string, end: string): Promise<News
     for (const r of statsRows) {
       addSubs += r.add_subs
       delSubs += r.del_subs
+      if (r.sent >= 100) {
+        sentCount += 1
+      }
     }
     subscribersTotal = addSubs
     subscribersActive = Math.max(subscribersTotal - delSubs, 0)
   }
 
-  return { openRateFraction, clickRateFraction, subscribersTotal, subscribersActive }
+  return { openRateFraction, clickRateFraction, subscribersTotal, subscribersActive, sentCount }
 }
 
 async function getSiteAggregates(start: string, end: string): Promise<SiteAggregates | null> {
@@ -588,6 +593,9 @@ async function handleSummary(_req: Request, res: Response) {
             break
           case 'newsletter-subscribers-active':
             current = newsletterAgg.subscribersActive
+            break
+          case 'newsletter-sent':
+            current = newsletterAgg.sentCount
             break
           default:
             current = 0
