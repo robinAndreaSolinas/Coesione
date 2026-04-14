@@ -36,12 +36,12 @@
             :series="overallPieSeries"
           />
         </div>
-        <div class="mt-4 grid gap-2 sm:grid-cols-2">
-          <div class="flex items-center gap-2 text-sm text-gray-800 dark:text-white/90">
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-4">
+          <div class="flex items-center justify-center gap-2 text-sm text-gray-800 dark:text-white/90 text-center">
             <span class="h-2.5 w-2.5 rounded-full bg-green-600"></span>
             <span>Raggiunti: {{ overallReachedPercent }}% ({{ overallReachedGoals }})</span>
           </div>
-          <div class="flex items-center gap-2 text-sm text-gray-800 dark:text-white/90">
+          <div class="flex items-center justify-center gap-2 text-sm text-gray-800 dark:text-white/90 text-center">
             <span class="h-2.5 w-2.5 rounded-full bg-red-600"></span>
             <span>Non raggiunti: {{ overallNotReachedPercent }}% ({{ overallNotReachedGoals }})</span>
           </div>
