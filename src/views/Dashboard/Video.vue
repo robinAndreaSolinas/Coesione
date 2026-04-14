@@ -5,7 +5,7 @@
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
         <metric-card
-          label="Numero di Audiovisual"
+          label="Numero video"
           :value="audiovisualLabel"
           :goal="videoGoals.audiovisualCount"
         />
@@ -17,7 +17,6 @@
         <metric-card
           label="Minuti guardati"
           :value="minutesLabel"
-          :goal="videoGoals.minuti"
         />
         <metric-card
           label="Completion rate"

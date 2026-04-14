@@ -172,19 +172,27 @@ interface RawVideoStat {
   view_through_rate?: number
 }
 
-interface LogoraStats {
-  cohesion_sources: number
-  total_groups: number
-  total_messages: number
-  total_participants: number
-  total_consultations: number
-  total_proposals: number
-  total_votes: number
+interface SondaggiGroupItem {
+  id: number
+  participants_count: number
+  source_url?: string
 }
 
-interface LogoraStatsResponse {
+interface SondaggiGroupsResponse {
   success: boolean
-  data?: LogoraStats | null
+  data?: SondaggiGroupItem[] | null
+  error?: unknown
+  timestamp?: string
+}
+
+interface SondaggiQuizPayload {
+  count_response?: number
+  count_quiz?: number
+}
+
+interface SondaggiQuizResponse {
+  success: boolean
+  data?: SondaggiQuizPayload | null
   error?: unknown
   timestamp?: string
 }
@@ -328,24 +336,33 @@ async function getSiteAggregates(start: string, end: string): Promise<SiteAggreg
 }
 
 async function getSondaggiAggregates(): Promise<SondaggiAggregates | null> {
-  const path = `/api/v1/sondaggi/stats`
-  const resp = await fetchJson<LogoraStatsResponse>(path)
-  if (!resp?.success || !resp.data) {
+  const [groupsResp, quizResp] = await Promise.all([
+    fetchJson<SondaggiGroupsResponse>(`/api/v1/sondaggi/groups`),
+    fetchJson<SondaggiQuizResponse>(`/api/v1/sondaggi/quiz`),
+  ])
+  if (!groupsResp?.success || !groupsResp.data) {
     return null
   }
 
-  const stats = resp.data
-
-  const surveysCount = stats.total_consultations || stats.total_groups || 0
-  const totalResponses = stats.total_votes || stats.total_messages || 0
-  const completionRateFraction =
-    stats.total_participants > 0 ? Math.min(totalResponses / stats.total_participants, 1) : 0
+  const rows = Array.isArray(groupsResp.data) ? groupsResp.data : []
+  const uniqueSurveyIds = new Set<number>()
+  const uniqueSourceUrls = new Set<string>()
+  for (const row of rows) {
+    uniqueSurveyIds.add(row.id)
+    if (typeof row.source_url === 'string' && row.source_url.trim().length > 0) {
+      uniqueSourceUrls.add(row.source_url.trim())
+    }
+  }
+  const quizCount = Number(quizResp?.data?.count_quiz ?? 0)
+  const quizResponses = Number(quizResp?.data?.count_response ?? 0)
+  const surveysCount = uniqueSurveyIds.size + (Number.isFinite(quizCount) ? quizCount : 0)
+  const totalResponses = uniqueSourceUrls.size + (Number.isFinite(quizResponses) ? quizResponses : 0)
   const averageResponses = surveysCount > 0 ? totalResponses / surveysCount : 0
 
   return {
     surveysCount,
     totalResponses,
-    completionRateFraction,
+    completionRateFraction: 0,
     averageResponses,
   }
 }

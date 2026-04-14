@@ -14,6 +14,7 @@ import siteRoutes from './routes/site.js'
 import socialRoutes from './routes/social.js'
 import videoRoutes from './routes/video.js'
 import sondaggiRoutes from './routes/sondaggi.js'
+import reportsRoutes from './routes/reports.js'
 
 const app = express()
 const PORT = Number(process.env.PORT) || 3001
@@ -33,6 +34,7 @@ app.use('/api/v1/site', siteRoutes)
 app.use('/api/v1/social', socialRoutes)
 app.use('/api/v1/video', videoRoutes)
 app.use('/api/v1/sondaggi', sondaggiRoutes)
+app.use('/api/v1/reports', reportsRoutes)
 
 app.get('/api/v1/health', (_req, res) => res.json({ ok: true }))
 
