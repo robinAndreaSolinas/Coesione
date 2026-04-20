@@ -266,10 +266,8 @@ async function getNewsletterAggregates(start: string, end: string): Promise<News
         sentCount += 1
       }
     }
-    const rowsCount = statsRows.length
-    subscribersTotal = rowsCount > 0 ? Math.round(addSubs / rowsCount) : 0
-    subscribersActive =
-      rowsCount > 0 ? Math.max(Math.round((addSubs - delSubs) / rowsCount), 0) : 0
+    subscribersTotal = addSubs
+    subscribersActive = Math.max(subscribersTotal - delSubs, 0)
   }
 
   return { openRateFraction, clickRateFraction, subscribersTotal, subscribersActive, sentCount }
@@ -422,15 +420,19 @@ async function getSocialAggregates(): Promise<SocialAggregates | null> {
     fetchJsonWithTimeout<SocialAggregate>('/api/v1/social/tiktok/stats'),
   ])
 
-  const fetchNumberWithTimeout = async (path: string): Promise<number> => {
+  const fetchPostsCount = async (): Promise<number> => {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), timeoutMs)
     try {
-      const url = `${DATA_API_BASE_URL}${path}`
+      const url = `${DATA_API_BASE_URL}/api/v1/social/post/count`
       const res = await fetch(url, { signal: controller.signal })
       if (!res.ok) return 0
-      const n = await res.json()
-      return safeNumber(n)
+      const payload = (await res.json()) as
+        | number
+        | { all?: number }
+        | null
+      if (typeof payload === 'number') return safeNumber(payload)
+      return safeNumber(payload?.all)
     } catch {
       return 0
     } finally {
@@ -438,7 +440,7 @@ async function getSocialAggregates(): Promise<SocialAggregates | null> {
     }
   }
 
-  const postsCount = await fetchNumberWithTimeout('/api/v1/social/post/count')
+  const postsCount = await fetchPostsCount()
 
   const all = [fb, yt, ig, tt].filter(Boolean) as SocialAggregate[]
   if (all.length === 0) {
