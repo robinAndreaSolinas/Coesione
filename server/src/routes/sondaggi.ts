@@ -45,6 +45,14 @@ export interface SondaggiStatsPayload {
   totalResponses: number
   completionRate: number
   averageResponses: number
+  logora: {
+    surveysCount: number
+    totalResponses: number
+  }
+  quiz: {
+    surveysCount: number
+    totalResponses: number
+  }
 }
 
 const router = Router()
@@ -83,8 +91,13 @@ router.get('/stats', async (_req: Request, res: Response) => {
     const quizCount = Number(quizResp?.data?.count_quiz ?? 0)
     const quizResponses = Number(quizResp?.data?.count_response ?? 0)
 
-    const surveysCount = uniqueSurveyIds.size + (Number.isFinite(quizCount) ? quizCount : 0)
-    const totalResponses = uniqueSourceUrls.size + (Number.isFinite(quizResponses) ? quizResponses : 0)
+    const logoraSurveysCount = uniqueSurveyIds.size
+    const logoraResponses = uniqueSourceUrls.size
+    const quizSurveysCount = Number.isFinite(quizCount) ? quizCount : 0
+    const quizResponsesTotal = Number.isFinite(quizResponses) ? quizResponses : 0
+
+    const surveysCount = logoraSurveysCount + quizSurveysCount
+    const totalResponses = logoraResponses + quizResponsesTotal
     const averageResponses = surveysCount > 0 ? totalResponses / surveysCount : 0
 
     const payload: SondaggiStatsPayload = {
@@ -92,6 +105,14 @@ router.get('/stats', async (_req: Request, res: Response) => {
       totalResponses,
       completionRate: 0,
       averageResponses,
+      logora: {
+        surveysCount: logoraSurveysCount,
+        totalResponses: logoraResponses,
+      },
+      quiz: {
+        surveysCount: quizSurveysCount,
+        totalResponses: quizResponsesTotal,
+      },
     }
 
     res.json(payload)

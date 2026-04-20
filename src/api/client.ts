@@ -111,6 +111,14 @@ export interface SondaggiStats {
   totalResponses: number
   completionRate: number
   averageResponses: number
+  logora: {
+    surveysCount: number
+    totalResponses: number
+  }
+  quiz: {
+    surveysCount: number
+    totalResponses: number
+  }
 }
 
 function getToken(): string | null {

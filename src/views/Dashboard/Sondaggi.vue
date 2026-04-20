@@ -34,18 +34,35 @@
           :progress-text="`Hai raggiunto circa ${Math.round(sondaggiProgressPercent)}% dell'obiettivo.`"
         />
       </div>
-      <div class="col-span-12 xl:col-span-5">
-        <analytics-chart
-          title="Risposte per mese"
-          :series="chartSeries"
-        />
-      </div>
-      <div class="col-span-12">
-        <analytics-chart
-          title="Andamento sondaggi"
-          description="Risposte"
-          :series="performanceSeries"
-        />
+      <div class="col-span-12 grid gap-4 md:grid-cols-2">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+          <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Logora</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Dati da groups</p>
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
+              <div class="text-xs text-gray-500 dark:text-gray-400">Sondaggi</div>
+              <div class="mt-1 text-lg font-semibold text-gray-800 dark:text-white/90">{{ logoraSurveysLabel }}</div>
+            </div>
+            <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
+              <div class="text-xs text-gray-500 dark:text-gray-400">Risposte</div>
+              <div class="mt-1 text-lg font-semibold text-gray-800 dark:text-white/90">{{ logoraResponsesLabel }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+          <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Quiz</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Dati da quiz</p>
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
+              <div class="text-xs text-gray-500 dark:text-gray-400">Sondaggi</div>
+              <div class="mt-1 text-lg font-semibold text-gray-800 dark:text-white/90">{{ quizSurveysLabel }}</div>
+            </div>
+            <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
+              <div class="text-xs text-gray-500 dark:text-gray-400">Risposte</div>
+              <div class="mt-1 text-lg font-semibold text-gray-800 dark:text-white/90">{{ quizResponsesLabel }}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </admin-layout>
@@ -61,7 +78,6 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
 import GoalProgress from '@/components/dashboard/GoalProgress.vue'
-import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
@@ -143,17 +159,8 @@ const sondaggiProgressPercent = computed(() => {
   return Math.max(0, Math.min(percent, 999))
 })
 
-const chartSeries = computed(() => [
-  {
-    name: 'Risposte',
-    data: [stats.value?.totalResponses ?? 0],
-  },
-])
-
-const performanceSeries = computed(() => [
-  {
-    name: 'Risposte',
-    data: [stats.value?.totalResponses ?? 0],
-  },
-])
+const logoraSurveysLabel = computed(() => loading.value ? '...' : formatMetricValue(stats.value?.logora?.surveysCount ?? 0, ''))
+const logoraResponsesLabel = computed(() => loading.value ? '...' : formatMetricValue(stats.value?.logora?.totalResponses ?? 0, ''))
+const quizSurveysLabel = computed(() => loading.value ? '...' : formatMetricValue(stats.value?.quiz?.surveysCount ?? 0, ''))
+const quizResponsesLabel = computed(() => loading.value ? '...' : formatMetricValue(stats.value?.quiz?.totalResponses ?? 0, ''))
 </script>
