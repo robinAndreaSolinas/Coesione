@@ -88,6 +88,7 @@ export interface SocialSummaryData {
 export interface SocialPlatformPoint {
   reach: number
   engagementRatePercent: number
+  postsCount: number
 }
 
 export interface SocialPlatformsData {

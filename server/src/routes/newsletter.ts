@@ -116,8 +116,12 @@ async function getNewsletterStats(start: string, end: string): Promise<{
   const openRateFraction = Math.min(openRateFractionRaw, 1)
   const clickRateFraction = Math.min(clickRateFractionRaw, 1)
 
-  const subscribersTotal = totalAddSubs
-  const subscribersActive = Math.max(subscribersTotal - totalDelSubs, 0)
+  // Media per riga (non somma): es. se ogni riga è un invio, prendiamo la media
+  // degli iscritti aggiunti/mantenuti per invio.
+  const rowsCount = rows.length
+  const subscribersTotal = rowsCount > 0 ? Math.round(totalAddSubs / rowsCount) : 0
+  const subscribersActive =
+    rowsCount > 0 ? Math.max(Math.round((totalAddSubs - totalDelSubs) / rowsCount), 0) : 0
 
   // Serie giornaliera (crescita iscritti e performance)
   const sortedDays = Array.from(byDay.entries()).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))

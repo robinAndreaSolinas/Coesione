@@ -49,6 +49,26 @@ export function seed(db: Database.Database) {
     { id: 'social-comments', title: 'Commenti', category: 'social', path: '/social', value: 5_000, unit: 'K' },
     { id: 'social-reach', title: 'Reach', category: 'social', path: '/social', value: 3_000_000, unit: 'M' },
 
+    // Social · Facebook
+    { id: 'social-facebook-engagement-rate', title: 'Facebook · Engagement rate', category: 'social', path: '/social', value: 0.014, unit: '%' },
+    { id: 'social-facebook-reach', title: 'Facebook · Reach', category: 'social', path: '/social', value: 2_000, unit: 'K' },
+    { id: 'social-facebook-post-count', title: 'Facebook · Numero post', category: 'social', path: '/social', value: 100, unit: '' },
+
+    // Social · Instagram
+    { id: 'social-instagram-engagement-rate', title: 'Instagram · Engagement rate', category: 'social', path: '/social', value: 0.0737, unit: '%' },
+    { id: 'social-instagram-reach', title: 'Instagram · Reach', category: 'social', path: '/social', value: 19_000, unit: 'K' },
+    { id: 'social-instagram-post-count', title: 'Instagram · Numero post', category: 'social', path: '/social', value: 100, unit: '' },
+
+    // Social · TikTok
+    { id: 'social-tiktok-engagement-rate', title: 'TikTok · Engagement rate', category: 'social', path: '/social', value: 0.0773, unit: '%' },
+    { id: 'social-tiktok-reach', title: 'TikTok · Reach', category: 'social', path: '/social', value: 24_000, unit: 'K' },
+    { id: 'social-tiktok-post-count', title: 'TikTok · Numero post', category: 'social', path: '/social', value: 100, unit: '' },
+
+    // Social · YouTube
+    { id: 'social-youtube-engagement-rate', title: 'YouTube · Engagement rate', category: 'social', path: '/social', value: 0.01, unit: '%' },
+    { id: 'social-youtube-reach', title: 'YouTube · Reach', category: 'social', path: '/social', value: 2_000, unit: 'K' },
+    { id: 'social-youtube-post-count', title: 'YouTube · Numero post', category: 'social', path: '/social', value: 100, unit: '' },
+
     // Video
     { id: 'video-audiovisual-count', title: 'Numero di Audiovisual', category: 'video', path: '/video', value: 12, unit: '' },
     { id: 'video-audience', title: 'Audience', category: 'video', path: '/video', value: 200_000, unit: 'K' },

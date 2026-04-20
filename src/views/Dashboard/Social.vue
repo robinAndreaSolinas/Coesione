@@ -62,9 +62,10 @@
               />
               {{ platform.label }}
             </h3>
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-4 sm:grid-cols-3">
               <metric-card label="Reach" :value="platform.reachValue" :goal="platform.reachGoal" :trend="null" />
               <metric-card label="Engagement rate" :value="platform.erValue" :goal="platform.erGoal" :trend="null" />
+              <metric-card label="Numero post" :value="platform.postsValue" :goal="platform.postsGoal" :trend="null" />
             </div>
           </div>
         </div>
@@ -198,12 +199,11 @@ const engagementSeries = computed(() => [
   { name: 'Commenti (K)', data: [denormalizeForDisplay(commentsTotal.value, 'K')] },
 ])
 
-const platformGoals = {
-  facebook: { reach: 2000, reachUnit: 'K', er: 1.4, erUnit: '%' },
-  instagram: { reach: 19000, reachUnit: 'K', er: 7.37, erUnit: '%' },
-  youtube: { reach: 2000, reachUnit: 'K', er: 1.0, erUnit: '%' },
-  tiktok: { reach: 24000, reachUnit: 'K', er: 7.73, erUnit: '%' },
-} as const
+function platformGoalFor(id: string, fallbackValue: number, fallbackUnit: string): { value: number; unit: string } {
+  const obj = objectives.value.find((o) => o.id === id)
+  if (!obj) return { value: fallbackValue, unit: fallbackUnit }
+  return { value: obj.value, unit: obj.unit }
+}
 
 const platformCards = computed(() => {
   const p = platforms.value
@@ -214,7 +214,17 @@ const platformCards = computed(() => {
     { key: 'tiktok', label: 'TikTok', data: p?.tiktok },
   ] as const
   return rows.map((r) => {
-    const cfg = platformGoals[r.key]
+    const reachGoalObj = platformGoalFor(`social-${r.key}-reach`, 2000, 'K')
+    const erGoalObj = platformGoalFor(`social-${r.key}-engagement-rate`, 1, '%')
+    const postsGoalObj = platformGoalFor(`social-${r.key}-post-count`, 100, '')
+    const cfg = {
+      reach: reachGoalObj.value,
+      reachUnit: reachGoalObj.unit || '',
+      er: erGoalObj.value,
+      erUnit: erGoalObj.unit || '%',
+      posts: postsGoalObj.value,
+      postsUnit: postsGoalObj.unit || '',
+    }
     const iconByKey = {
       facebook: {
         cls: 'bg-[#1877F2]',
@@ -241,8 +251,10 @@ const platformCards = computed(() => {
       iconSvg: icon.svg,
       reachValue: formatCompact(denormalizeForDisplay(r.data?.reach ?? 0, cfg.reachUnit), cfg.reachUnit),
       erValue: formatCompact(denormalizeForDisplay(r.data?.engagementRatePercent ?? 0, cfg.erUnit), cfg.erUnit),
-      reachGoal: formatCompact(denormalizeForDisplay(cfg.reach, cfg.reachUnit), cfg.reachUnit),
-      erGoal: formatCompact(denormalizeForDisplay(cfg.er, cfg.erUnit), cfg.erUnit),
+      postsValue: formatCompact(denormalizeForDisplay(r.data?.postsCount ?? 0, cfg.postsUnit), cfg.postsUnit),
+      reachGoal: formatCompact(cfg.reach, cfg.reachUnit),
+      erGoal: formatCompact(cfg.er, cfg.erUnit),
+      postsGoal: formatCompact(cfg.posts, cfg.postsUnit),
     }
   })
 })

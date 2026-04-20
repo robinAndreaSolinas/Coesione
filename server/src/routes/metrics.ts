@@ -266,8 +266,10 @@ async function getNewsletterAggregates(start: string, end: string): Promise<News
         sentCount += 1
       }
     }
-    subscribersTotal = addSubs
-    subscribersActive = Math.max(subscribersTotal - delSubs, 0)
+    const rowsCount = statsRows.length
+    subscribersTotal = rowsCount > 0 ? Math.round(addSubs / rowsCount) : 0
+    subscribersActive =
+      rowsCount > 0 ? Math.max(Math.round((addSubs - delSubs) / rowsCount), 0) : 0
   }
 
   return { openRateFraction, clickRateFraction, subscribersTotal, subscribersActive, sentCount }

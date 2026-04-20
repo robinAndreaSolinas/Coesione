@@ -8,13 +8,13 @@
           label="Open rate (calcolato)"
           :value="openRateDisplay"
           :goal="newsletterGoals.openRate"
-          :trend="openRateTrend"
+          :trend="null"
         />
         <metric-card
           label="Click rate (calcolato)"
           :value="clickRateDisplay"
           :goal="newsletterGoals.clickRate"
-          :trend="clickRateTrend"
+          :trend="null"
         />
         <metric-card
           label="Policy briefs e newsletter distribuiti"
@@ -26,13 +26,13 @@
           label="Iscritti totali"
           :value="subscribersTotalDisplay"
           :goal="newsletterGoals.iscrittiTotali"
-          :trend="subscribersTotalTrend"
+          :trend="null"
         />
         <metric-card
           label="Iscritti attivi"
           :value="subscribersActiveDisplay"
           :goal="newsletterGoals.iscrittiAttivi"
-          :trend="subscribersActiveTrend"
+          :trend="null"
         />
       </div>
       <div class="col-span-12 xl:col-span-7">
@@ -71,6 +71,7 @@ import { useGoals } from '@/composables/useGoals'
 import { useObjectives } from '@/composables/useObjectives'
 import { useNewsletter } from '@/composables/useNewsletter'
 import { useNewsletterDaily } from '@/composables/useNewsletterDaily'
+import { useMetrics } from '@/composables/useMetrics'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
@@ -81,12 +82,36 @@ const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
 const { metrics, formatNumber, formatPercent } = useNewsletter()
 const { dailyPoints } = useNewsletterDaily()
+const { formatMetricValue } = useMetrics()
+
+function denormalizeForUnit(raw: number, unit: string): number {
+  if (unit === 'K') return raw / 1_000
+  if (unit === 'M') return raw / 1_000_000
+  if (unit === '%') return raw
+  return raw
+}
+
+function formatByObjectiveUnit(
+  raw: number,
+  id: string,
+  fallback: (v: number) => string,
+): string {
+  const obj = objectives.value.find((o) => o.id === id)
+  if (!obj || !obj.unit) return fallback(raw)
+  return formatMetricValue(denormalizeForUnit(raw, obj.unit), obj.unit)
+}
 
 const openRateDisplay = computed(() => formatPercent(metrics.value.openRate))
 const clickRateDisplay = computed(() => formatPercent(metrics.value.clickRate))
-const subscribersTotalDisplay = computed(() => formatNumber(metrics.value.subscribersTotal))
-const subscribersActiveDisplay = computed(() => formatNumber(metrics.value.subscribersActive))
-const sentTotalDisplay = computed(() => formatNumber(metrics.value.sentTotal))
+const subscribersTotalDisplay = computed(() =>
+  formatByObjectiveUnit(metrics.value.subscribersTotal, 'newsletter-subscribers-total', formatNumber),
+)
+const subscribersActiveDisplay = computed(() =>
+  formatByObjectiveUnit(metrics.value.subscribersActive, 'newsletter-subscribers-active', formatNumber),
+)
+const sentTotalDisplay = computed(() =>
+  formatByObjectiveUnit(metrics.value.sentTotal, 'newsletter-sent', formatNumber),
+)
 
 const newsletterObjectivesById = computed(
   () =>

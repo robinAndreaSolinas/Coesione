@@ -31,6 +31,9 @@ type SocialAggregate = {
   total_shares?: number
   total_comments?: number
   engagement_rate?: number
+  posts?: unknown[]
+  total_posts?: number
+  post_count?: number
 }
 
 type SocialSummaryData = {
@@ -46,6 +49,7 @@ type SocialSummaryData = {
 type SocialPlatformPoint = {
   reach: number
   engagementRatePercent: number
+  postsCount: number
 }
 
 type SocialPlatformsData = {
@@ -86,7 +90,7 @@ function denomForAudience(a: SocialAggregate): number {
 }
 
 function toPlatformPoint(a: SocialAggregate | null): SocialPlatformPoint {
-  if (!a) return { reach: 0, engagementRatePercent: 0 }
+  if (!a) return { reach: 0, engagementRatePercent: 0, postsCount: 0 }
   const reach = denomForAudience(a)
   const engagements = safeNumber(a.total_engagements)
   const interaction = safeNumber(a.total_interaction)
@@ -96,7 +100,10 @@ function toPlatformPoint(a: SocialAggregate | null): SocialPlatformPoint {
       : reach > 0
         ? (Math.max(engagements, interaction) / reach) * 100
         : 0
-  return { reach, engagementRatePercent }
+  const postsCount = Array.isArray(a.posts)
+    ? a.posts.length
+    : safeNumber(a.total_posts) || safeNumber(a.post_count)
+  return { reach, engagementRatePercent, postsCount }
 }
 
 router.get('/summary', async (_req: Request, res: Response) => {

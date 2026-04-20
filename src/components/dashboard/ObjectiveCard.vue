@@ -114,8 +114,8 @@ const iconPaths: Record<string, string> = {
 
 const iconSvg = computed(() => iconPaths[props.objective.category] ?? iconPaths.social)
 
-const currentLabelComputed = computed(() => props.currentLabel ?? 'N/A')
+const currentLabelComputed = computed(() => props.currentLabel ?? '0')
 const targetLabelComputed = computed(
-  () => props.targetLabel ?? (props.objective.value != null ? formatGoal(props.objective.value, props.objective.unit) : 'N/A'),
+  () => props.targetLabel ?? (props.objective.value != null ? formatGoal(props.objective.value, props.objective.unit) : '0'),
 )
 </script>

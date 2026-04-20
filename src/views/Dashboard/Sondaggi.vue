@@ -143,9 +143,9 @@ const sondaggiCurrent = computed(() => {
   const avgResponses = denormalizeValue(avgResponsesRaw, avgRespUnit)
 
   return {
-    numeroSondaggi: loading.value ? '...' : formatMetricValue(count, countUnit),
-    risposteTotali: loading.value ? '...' : formatMetricValue(totalResponses, totalRespUnit),
-    mediaRisposte: loading.value ? '...' : formatMetricValue(avgResponses, avgRespUnit),
+    numeroSondaggi: formatMetricValue(count, countUnit),
+    risposteTotali: formatMetricValue(totalResponses, totalRespUnit),
+    mediaRisposte: formatMetricValue(avgResponses, avgRespUnit),
   }
 })
 
@@ -159,8 +159,8 @@ const sondaggiProgressPercent = computed(() => {
   return Math.max(0, Math.min(percent, 999))
 })
 
-const logoraSurveysLabel = computed(() => loading.value ? '...' : formatMetricValue(stats.value?.logora?.surveysCount ?? 0, ''))
-const logoraResponsesLabel = computed(() => loading.value ? '...' : formatMetricValue(stats.value?.logora?.totalResponses ?? 0, ''))
-const quizSurveysLabel = computed(() => loading.value ? '...' : formatMetricValue(stats.value?.quiz?.surveysCount ?? 0, ''))
-const quizResponsesLabel = computed(() => loading.value ? '...' : formatMetricValue(stats.value?.quiz?.totalResponses ?? 0, ''))
+const logoraSurveysLabel = computed(() => formatMetricValue(stats.value?.logora?.surveysCount ?? 0, ''))
+const logoraResponsesLabel = computed(() => formatMetricValue(stats.value?.logora?.totalResponses ?? 0, ''))
+const quizSurveysLabel = computed(() => formatMetricValue(stats.value?.quiz?.surveysCount ?? 0, ''))
+const quizResponsesLabel = computed(() => formatMetricValue(stats.value?.quiz?.totalResponses ?? 0, ''))
 </script>

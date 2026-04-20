@@ -143,24 +143,16 @@ const completionRateValue = computed(() =>
 )
 
 const audiovisualLabel = computed(() =>
-  loading.value
-    ? '...'
-    : formatMetricValue(audiovisualCountValue.value, videoUnits.value.audiovisualCount || '')
+  formatMetricValue(audiovisualCountValue.value, videoUnits.value.audiovisualCount || ''),
 )
 const audienceLabel = computed(() =>
-  loading.value
-    ? '...'
-    : formatMetricValue(audienceValue.value, videoUnits.value.audience || '')
+  formatMetricValue(audienceValue.value, videoUnits.value.audience || ''),
 )
 const minutesLabel = computed(() =>
-  loading.value
-    ? '...'
-    : formatMetricValue(minutesWatchedValue.value, videoUnits.value.minuti || '')
+  formatMetricValue(minutesWatchedValue.value, videoUnits.value.minuti || ''),
 )
 const completionRateLabel = computed(() =>
-  loading.value
-    ? '...'
-    : formatMetricValue(completionRateValue.value, videoUnits.value.completionRate || '%')
+  formatMetricValue(completionRateValue.value, videoUnits.value.completionRate || '%'),
 )
 const completionRateGoalValue = computed(() => {
   const obj = objectives.value.find((o) => o.id === 'video-completion-rate')
