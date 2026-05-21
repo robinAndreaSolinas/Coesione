@@ -22,6 +22,17 @@ export function seed(db: Database.Database) {
   // Rimuove indicatori non presenti nel documento indicatori/output
   // (evita che restino visibili anche se il DB era già stato inizializzato)
   db.prepare('DELETE FROM objectives WHERE id = ?').run('surveys-completion-rate')
+  // social-views → social-interactions (evita UNIQUE se entrambi esistono già)
+  const hasInteractions = db
+    .prepare("SELECT 1 AS ok FROM objectives WHERE id = 'social-interactions' LIMIT 1")
+    .get() as { ok: number } | undefined
+  if (hasInteractions) {
+    db.prepare("DELETE FROM objectives WHERE id = 'social-views'").run()
+  } else {
+    db.prepare(
+      `UPDATE objectives SET id = 'social-interactions', title = 'Interazioni', value = 50000, unit = 'K' WHERE id = 'social-views'`
+    ).run()
+  }
 
   const objCount = db.prepare('SELECT COUNT(*) as c FROM objectives').get() as { c: number }
   // Prosegui: inseriamo solo gli obiettivi mancanti (INSERT OR IGNORE).
@@ -43,7 +54,7 @@ export function seed(db: Database.Database) {
     // Social
     { id: 'social-engagement-rate', title: 'Engagement rate (calcolato)', category: 'social', path: '/social', value: 0.05, unit: '%' },
     { id: 'social-posts-count', title: 'Numero post', category: 'social', path: '/social', value: 306, unit: '' },
-    { id: 'social-views', title: 'Views', category: 'social', path: '/social', value: 2_000_000, unit: 'M' },
+    { id: 'social-interactions', title: 'Interazioni', category: 'social', path: '/social', value: 50_000, unit: 'K' },
     { id: 'social-audience', title: 'Audience', category: 'social', path: '/social', value: 500_000, unit: 'K' },
     { id: 'social-shares', title: 'Condivisioni', category: 'social', path: '/social', value: 10_000, unit: 'K' },
     { id: 'social-comments', title: 'Commenti', category: 'social', path: '/social', value: 5_000, unit: 'K' },

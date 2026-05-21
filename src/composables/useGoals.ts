@@ -18,7 +18,7 @@ export interface GoalsState {
 const defaultGoals: GoalsState = {
   social: {
     engagementRate: '5%',
-    views: '2M',
+    interactions: '50K',
     audience: '500K',
     condivisioni: '10K',
     commenti: '5K',

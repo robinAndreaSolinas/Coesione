@@ -78,7 +78,6 @@ export interface VideoStats {
 export interface SocialSummaryData {
   interactionsTotal: number
   audienceTotal: number
-  viewsTotal: number
   sharesTotal: number
   commentsTotal: number
   engagementRateTotalPercent: number
@@ -87,6 +86,7 @@ export interface SocialSummaryData {
 
 export interface SocialPlatformPoint {
   reach: number
+  interactions: number
   engagementRatePercent: number
   postsCount: number
 }

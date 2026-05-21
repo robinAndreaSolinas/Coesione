@@ -24,7 +24,6 @@ export function useSocialSummary() {
 
   const interactionsTotal = computed(() => summary.value?.interactionsTotal ?? 0)
   const audienceTotal = computed(() => summary.value?.audienceTotal ?? 0)
-  const viewsTotal = computed(() => summary.value?.viewsTotal ?? 0)
   const sharesTotal = computed(() => summary.value?.sharesTotal ?? 0)
   const commentsTotal = computed(() => summary.value?.commentsTotal ?? 0)
   const engagementRateTotalPercent = computed(() => summary.value?.engagementRateTotalPercent ?? 0)
@@ -36,7 +35,6 @@ export function useSocialSummary() {
     summary,
     interactionsTotal,
     audienceTotal,
-    viewsTotal,
     sharesTotal,
     commentsTotal,
     engagementRateTotalPercent,

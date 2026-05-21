@@ -11,9 +11,8 @@
           :trend="null"
         />
         <metric-card
-          label="Views"
-          :value="socialCurrent.views"
-          :goal="socialGoals.views"
+          label="Interazioni"
+          :value="interactionsLabel"
           :trend="null"
         />
         <metric-card
@@ -37,13 +36,13 @@
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
-          title="Obiettivo engagement"
-          description="Target mensile interazioni social"
+          title="Obiettivo engagement rate"
+          description="Target mensile engagement rate sui canali social"
           :progress="Math.round(socialProgressPercent)"
           :target-percent="100"
           :target-label="socialGoals.engagementRate"
           :current-label="socialCurrent.engagementRateRawLabel"
-          progress-text="Ottimo engagement! Raggiungerai l'obiettivo a fine mese."
+          progress-text="Ottimo engagement rate! Raggiungerai l'obiettivo a fine mese."
         />
       </div>
       <div class="col-span-12">
@@ -78,6 +77,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useGoals } from '@/composables/useGoals'
 import { useObjectives } from '@/composables/useObjectives'
+import { useMetrics } from '@/composables/useMetrics'
 import { useSocialSummary } from '@/composables/useSocialSummary'
 import { api, type SocialPlatformsData } from '@/api/client'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
@@ -88,6 +88,7 @@ import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
+const { formatMetricValue } = useMetrics()
 
 const socialGoals = computed(() => {
   const byId = new Map(
@@ -104,7 +105,6 @@ const socialGoals = computed(() => {
 
   return {
     engagementRate: goalFor('social-engagement-rate', goals.value.social.engagementRate),
-    views: goalFor('social-views', goals.value.social.views),
     reach: goalFor('social-reach', goals.value.social.reach),
     condivisioni: goalFor('social-shares', goals.value.social.condivisioni),
     postsCount: goalFor('social-posts-count', goals.value.social.postsCount),
@@ -141,7 +141,6 @@ onMounted(async () => {
 const {
   interactionsTotal,
   audienceTotal,
-  viewsTotal,
   sharesTotal,
   commentsTotal,
   engagementRateTotalPercent,
@@ -150,36 +149,47 @@ const {
 
 const socialCurrent = computed(() => {
   const engagementObj = objectives.value.find((o) => o.id === 'social-engagement-rate')
-  const viewsObj = objectives.value.find((o) => o.id === 'social-views')
   const reachObj = objectives.value.find((o) => o.id === 'social-reach')
   const sharesObj = objectives.value.find((o) => o.id === 'social-shares')
 
   const engagementUnit = engagementObj?.unit ?? '%'
-  const viewsUnit = viewsObj?.unit ?? 'M'
   const reachUnit = reachObj?.unit ?? 'K'
   const sharesUnit = sharesObj?.unit ?? 'K'
 
-  const engagementRateRawLabel = formatCompact(
-    denormalizeForDisplay(engagementRateTotalPercent.value, engagementUnit),
-    '%',
-  )
+  const engagementRateRawLabel = formatCompact(engagementRateTotalPercent.value, '%')
 
   const engagementRate = formatCompact(engagementRateTotalPercent.value, '%')
 
-  const views = formatCompact(denormalizeForDisplay(viewsTotal.value, viewsUnit), viewsUnit)
   const reach = formatCompact(denormalizeForDisplay(audienceTotal.value, reachUnit), reachUnit)
   const condivisioni = formatCompact(denormalizeForDisplay(sharesTotal.value, sharesUnit), sharesUnit)
   const posts = formatCompact(postsCount.value, objectives.value.find((o) => o.id === 'social-posts-count')?.unit ?? '')
 
   return {
     engagementRate,
-    views,
     reach,
     condivisioni,
     engagementRateRawLabel,
     posts,
   }
 })
+
+const interactionsUnit = computed(
+  () => objectives.value.find((o) => o.id === 'social-interactions')?.unit ?? 'K',
+)
+
+function denormalizeMetricValue(value: number, unit: string): number {
+  if (unit === '%') return value * 100
+  if (unit === 'K') return value / 1_000
+  if (unit === 'M') return value / 1_000_000
+  return value
+}
+
+const interactionsLabel = computed(() =>
+  formatMetricValue(
+    denormalizeMetricValue(interactionsTotal.value, interactionsUnit.value),
+    interactionsUnit.value,
+  ),
+)
 
 const socialProgressPercent = computed(() => {
   const engagementObj = objectives.value.find((o) => o.id === 'social-engagement-rate')

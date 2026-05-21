@@ -1,3 +1,7 @@
+import { loadEnvFromProjectRoot } from './lib/loadEnv.js'
+
+loadEnvFromProjectRoot()
+
 export const DATA_API_BASE_URL =
   process.env.DATA_API_BASE_URL ?? 'http://127.0.0.1:8000'
 

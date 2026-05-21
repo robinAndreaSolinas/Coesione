@@ -38,7 +38,7 @@
     - `GET /api/v1/social/stats`
   - Da fare:
     - Definire aggregazione in `metrics.ts` (quali campi usare per:
-      - `social-engagement-rate`, `social-views`, `social-audience`,
+      - `social-engagement-rate`, `social-interactions`, `social-audience`,
       - `social-shares`, `social-comments`, `social-reach`).
     - Mappare ciascun obiettivo DB `social-*` su uno o più campi di `/social/stats`.
 

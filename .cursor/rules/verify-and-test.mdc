@@ -1,0 +1,22 @@
+---
+description: Verifica errori e test end-to-end prima di considerare il task completato
+alwaysApply: true
+---
+
+# Verifica e test obbligatori
+
+Prima di chiudere qualsiasi modifica:
+
+1. **Non lasciare il progetto rotto** — se introduci errori, correggili nello stesso task.
+2. **Build / typecheck** (quando tocchi codice rilevante):
+   - `cd server && npm run build`
+   - dalla root: `npm run type-check` (se fallisce per file non toccati, verifica almeno i file modificati)
+3. **Server** — dopo cambi a `server/` o `seed.ts`:
+   - avviare il backend e controllare che parta senza eccezioni (es. `SqliteError`, crash su import)
+   - `curl http://127.0.0.1:3001/api/v1/health`
+   - testare gli endpoint coinvolti (es. `/api/v1/social/summary`, `/api/v1/metrics/summary`)
+4. **Migrazioni DB / seed** — mai `UPDATE` di primary key verso un `id` che può già esistere; preferire DELETE del vecchio record + `INSERT OR IGNORE` del nuovo.
+5. **Rinomina ID obiettivi/API** — aggiornare mapping in `metrics.ts`, `socialData.ts`, viste Vue, seed e compatibilità temporanea (`case 'vecchio-id':`) finché il DB è migrato.
+6. **Riavvio** — ricordare all’utente `npm run dev:all` (carica `.env.local`) se il proxy Vite restituisce `ECONNREFUSED` su `:3001`.
+
+Non dichiarare “fatto” senza aver verificato che il server parte e le API toccate rispondono con dati coerenti.

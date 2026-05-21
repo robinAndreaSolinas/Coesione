@@ -13,7 +13,7 @@ services:
     labels:
       - "traefik.docker.network=proxynet"
       - "traefik.enable=true"
-      - "traefik.http.routers.front.rule=Host(`dev-coesione.robinweb.it`)"
+      - "traefik.http.routers.front.rule=Host(`dev-coesione.robinweb.it`) || Host(`coesione.robinweb.it`)"
       - "traefik.http.routers.front.entrypoints=https"
       - "traefik.http.routers.front.tls=true"
       # - "traefik.http.routers.front.tls.certresolver=cloudflare"

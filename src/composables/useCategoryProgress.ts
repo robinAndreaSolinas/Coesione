@@ -1,6 +1,10 @@
 import { computed } from 'vue'
 import { useMetrics } from './useMetrics'
 
+/** Esclusi dalla % di categoria in Totale (dettaglio in Social) */
+const PLATFORM_OBJECTIVE_RE =
+  /^social-(facebook|instagram|youtube|tiktok)-|^social-interactions$/
+
 const CATEGORY_LABELS: Record<string, string> = {
   social: 'Social',
   video: 'Video',
@@ -15,7 +19,9 @@ export function useCategoryProgress() {
   const progressByCategory = computed(() => {
     const categories = ['social', 'video', 'newsletter', 'siti', 'sondaggi'] as const
     return categories.map((cat) => {
-      const rows = metrics.value.filter((m) => m.category === cat)
+      const rows = metrics.value.filter(
+        (m) => m.category === cat && !PLATFORM_OBJECTIVE_RE.test(m.key),
+      )
       const totalGoals = rows.length
       const reachedGoals = rows.filter((m) => m.goal > 0 && m.current >= m.goal).length
       const value = totalGoals > 0 ? Math.round((reachedGoals / totalGoals) * 100) : 0
@@ -28,7 +34,7 @@ export function useCategoryProgress() {
   })
 
   const overallGoalsStats = computed(() => {
-    const rows = metrics.value
+    const rows = metrics.value.filter((m) => !PLATFORM_OBJECTIVE_RE.test(m.key))
     const totalGoals = rows.length
     const reachedGoals = rows.filter((m) => m.goal > 0 && m.current >= m.goal).length
     const notReachedGoals = Math.max(totalGoals - reachedGoals, 0)

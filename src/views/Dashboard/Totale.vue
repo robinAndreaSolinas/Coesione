@@ -9,7 +9,7 @@
     </div>
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-5">
       <objective-card
-        v-for="obj in objectives"
+        v-for="obj in totaleObjectives"
         :key="obj.id"
         :objective="obj"
         :current-label="metricByKeyObj[obj.id]?.currentLabel"
@@ -77,11 +77,17 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ObjectiveCard from '@/components/dashboard/ObjectiveCard.vue'
 import CategoryProgressCard from '@/components/dashboard/CategoryProgressCard.vue'
-import MetricCard from '@/components/dashboard/MetricCard.vue'
+/** Obiettivi per-piattaforma: dettaglio in pagina Social, non in overview Totale */
+const PLATFORM_OBJECTIVE_RE =
+  /^social-(facebook|instagram|youtube|tiktok)-|^social-interactions$/
 
 const { objectives } = useObjectives()
 const { progressByCategory } = useCategoryProgress()
 const { metricsForView } = useMetrics()
+
+const totaleObjectives = computed(() =>
+  objectives.value.filter((o) => !PLATFORM_OBJECTIVE_RE.test(o.id)),
+)
 const isDarkMode = ref(false)
 let themeObserver: MutationObserver | null = null
 
@@ -93,9 +99,13 @@ const metricByKeyObj = computed(() => {
   return obj
 })
 
-const overallTotalGoals = computed(() => metricsForView.value.length)
+const totaleMetrics = computed(() =>
+  metricsForView.value.filter((m) => !PLATFORM_OBJECTIVE_RE.test(m.key)),
+)
+
+const overallTotalGoals = computed(() => totaleMetrics.value.length)
 const overallReachedGoals = computed(() =>
-  metricsForView.value.filter((m) => m.goal > 0 && m.current >= m.goal).length
+  totaleMetrics.value.filter((m) => m.goal > 0 && m.current >= m.goal).length
 )
 const overallNotReachedGoals = computed(() =>
   Math.max(overallTotalGoals.value - overallReachedGoals.value, 0)
