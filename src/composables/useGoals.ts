@@ -19,7 +19,6 @@ const defaultGoals: GoalsState = {
   social: {
     engagementRate: '5%',
     interactions: '50K',
-    audience: '500K',
     condivisioni: '10K',
     commenti: '5K',
     reach: '3M',

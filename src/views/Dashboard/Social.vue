@@ -140,7 +140,7 @@ onMounted(async () => {
 
 const {
   interactionsTotal,
-  audienceTotal,
+  reachTotal,
   sharesTotal,
   commentsTotal,
   engagementRateTotalPercent,
@@ -160,7 +160,7 @@ const socialCurrent = computed(() => {
 
   const engagementRate = formatCompact(engagementRateTotalPercent.value, '%')
 
-  const reach = formatCompact(denormalizeForDisplay(audienceTotal.value, reachUnit), reachUnit)
+  const reach = formatCompact(denormalizeForDisplay(reachTotal.value, reachUnit), reachUnit)
   const condivisioni = formatCompact(denormalizeForDisplay(sharesTotal.value, sharesUnit), sharesUnit)
   const posts = formatCompact(postsCount.value, objectives.value.find((o) => o.id === 'social-posts-count')?.unit ?? '')
 

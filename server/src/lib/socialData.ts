@@ -41,10 +41,10 @@ export type SocialSummaryData = {
   /** Somma interazioni per piattaforma */
   interactionsTotal: number
   /** Somma reach (per YouTube: views se reach = 0) */
-  audienceTotal: number
+  reachTotal: number
   sharesTotal: number
   commentsTotal: number
-  /** (interactionsTotal / audienceTotal) × 100 */
+  /** (interactionsTotal / reachTotal) × 100 */
   engagementRateTotalPercent: number
   postsCount: number
 }
@@ -116,7 +116,7 @@ export function summaryFromPlatforms(
 
   return {
     interactionsTotal,
-    audienceTotal: reachTotal,
+    reachTotal,
     sharesTotal: 0,
     commentsTotal: 0,
     engagementRateTotalPercent,
@@ -244,9 +244,8 @@ export function currentForSocialObjective(
     case 'social-interactions':
     case 'social-views':
       return summary.interactionsTotal
-    case 'social-audience':
     case 'social-reach':
-      return summary.audienceTotal
+      return summary.reachTotal
     case 'social-shares':
       return summary.sharesTotal
     case 'social-comments':
