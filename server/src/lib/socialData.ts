@@ -16,12 +16,14 @@ export type SocialAggregate = {
   posts?: SocialPostEntry[]
 }
 
+/** Risposta GET /api/v1/social/post/count */
 export type SocialPostCount = {
   all?: number
   facebook?: number
   instagram?: number
   x?: number
   tiktok?: number
+  youtube?: number
   other?: number
   message?: string
 }
@@ -131,6 +133,38 @@ export function toPlatformPoint(
   return { reach, reachTotal, interactions, engagementRatePercent, postsCount }
 }
 
+export function platformPostsCount(
+  postsMap: SocialPostCount,
+  platform: SocialPlatformKey,
+): number {
+  switch (platform) {
+    case 'facebook':
+      return safeNumber(postsMap.facebook)
+    case 'instagram':
+      return safeNumber(postsMap.instagram)
+    case 'x':
+      return safeNumber(postsMap.x)
+    case 'tiktok':
+      return safeNumber(postsMap.tiktok)
+    default:
+      return 0
+  }
+}
+
+/** Totale post in dashboard: campo `all` da post/count (include youtube/other). */
+export function totalPostsCount(postsMap: SocialPostCount): number {
+  const all = safeNumber(postsMap.all)
+  if (all > 0) return all
+  return (
+    platformPostsCount(postsMap, 'facebook') +
+    platformPostsCount(postsMap, 'instagram') +
+    platformPostsCount(postsMap, 'x') +
+    platformPostsCount(postsMap, 'tiktok') +
+    safeNumber(postsMap.other) +
+    safeNumber(postsMap.youtube)
+  )
+}
+
 export function summaryFromPlatforms(
   platforms: SocialPlatformsData,
   postsCount: number,
@@ -175,12 +209,6 @@ async function fetchDataApiSafe(pathWithQuery: string, timeoutMs: number): Promi
   }
 }
 
-function xPostsCount(postsMap: SocialPostCount): number {
-  const direct = safeNumber(postsMap.x)
-  if (direct > 0) return direct
-  return safeNumber(postsMap.other)
-}
-
 export async function fetchSocialPostCount(timeoutMs = 15000): Promise<SocialPostCount> {
   const raw = await fetchDataApiSafe('/api/v1/social/post/count', timeoutMs)
   const payload = unwrapApiPayload<SocialPostCount | number>(raw)
@@ -190,12 +218,19 @@ export async function fetchSocialPostCount(timeoutMs = 15000): Promise<SocialPos
   return payload && typeof payload === 'object' ? payload : {}
 }
 
+const PLATFORM_STATS_PATH: Record<SocialPlatformKey, string> = {
+  facebook: '/api/v1/social/facebook/stats',
+  instagram: '/api/v1/social/instagram/stats',
+  x: '/api/v1/social/x/stats',
+  tiktok: '/api/v1/social/tiktok/stats',
+}
+
 export async function fetchSocialPlatforms(timeoutMs = 15000): Promise<SocialPlatformsData> {
   const [fbRaw, xRaw, igRaw, ttRaw, postsMap] = await Promise.all([
-    fetchDataApiSafe('/api/v1/social/facebook/stats', timeoutMs),
-    fetchDataApiSafe('/api/v1/social/x/stats', timeoutMs),
-    fetchDataApiSafe('/api/v1/social/instagram/stats', timeoutMs),
-    fetchDataApiSafe('/api/v1/social/tiktok/stats', timeoutMs),
+    fetchDataApiSafe(PLATFORM_STATS_PATH.facebook, timeoutMs),
+    fetchDataApiSafe(PLATFORM_STATS_PATH.x, timeoutMs),
+    fetchDataApiSafe(PLATFORM_STATS_PATH.instagram, timeoutMs),
+    fetchDataApiSafe(PLATFORM_STATS_PATH.tiktok, timeoutMs),
     fetchSocialPostCount(timeoutMs),
   ])
 
@@ -205,47 +240,23 @@ export async function fetchSocialPlatforms(timeoutMs = 15000): Promise<SocialPla
   const tt = unwrapApiPayload<SocialAggregate>(ttRaw)
 
   return {
-    facebook: toPlatformPoint(fb, safeNumber(postsMap.facebook), 'facebook'),
-    instagram: toPlatformPoint(ig, safeNumber(postsMap.instagram), 'instagram'),
-    x: toPlatformPoint(x, xPostsCount(postsMap), 'x'),
-    tiktok: toPlatformPoint(tt, safeNumber(postsMap.tiktok), 'tiktok'),
+    facebook: toPlatformPoint(fb, platformPostsCount(postsMap, 'facebook'), 'facebook'),
+    instagram: toPlatformPoint(ig, platformPostsCount(postsMap, 'instagram'), 'instagram'),
+    x: toPlatformPoint(x, platformPostsCount(postsMap, 'x'), 'x'),
+    tiktok: toPlatformPoint(tt, platformPostsCount(postsMap, 'tiktok'), 'tiktok'),
   }
 }
 
 export async function fetchSocialSummary(timeoutMs = 15000): Promise<SocialSummaryData> {
-  const [platforms, postsMap, fbRaw, xRaw, igRaw, ttRaw] = await Promise.all([
+  const [platforms, postsMap] = await Promise.all([
     fetchSocialPlatforms(timeoutMs),
     fetchSocialPostCount(timeoutMs),
-    fetchDataApiSafe('/api/v1/social/facebook/stats', timeoutMs),
-    fetchDataApiSafe('/api/v1/social/x/stats', timeoutMs),
-    fetchDataApiSafe('/api/v1/social/instagram/stats', timeoutMs),
-    fetchDataApiSafe('/api/v1/social/tiktok/stats', timeoutMs),
   ])
 
-  const summary = summaryFromPlatforms(platforms, safeNumber(postsMap.all))
-
-  const stats = [fbRaw, xRaw, igRaw, ttRaw]
-    .map((r) => unwrapApiPayload<SocialAggregate>(r))
-    .filter(Boolean) as SocialAggregate[]
-
-  if (stats.length === 0) return summary
-
-  let sharesSum = 0
-  let commentsSum = 0
-  for (const a of stats) {
-    sharesSum += safeNumber(a.total_shares)
-    commentsSum += safeNumber(a.total_comments)
-  }
-  const n = stats.length
-
-  return {
-    ...summary,
-    sharesTotal: sharesSum / n,
-    commentsTotal: commentsSum / n,
-  }
+  return summaryFromPlatforms(platforms, totalPostsCount(postsMap))
 }
 
-const PLATFORM_PREFIX: Record<string, keyof SocialPlatformsData> = {
+const PLATFORM_PREFIX: Record<string, SocialPlatformKey> = {
   facebook: 'facebook',
   instagram: 'instagram',
   x: 'x',

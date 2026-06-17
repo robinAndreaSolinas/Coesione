@@ -7,6 +7,7 @@ import {
   fetchSocialPlatforms,
   fetchSocialSummary,
 } from '../lib/socialData.js'
+import { fetchSondaggiAggregates } from '../lib/sondaggiData.js'
 
 declare const fetch: (
   url: string,
@@ -148,9 +149,9 @@ interface SiteStatsBySourceResponse {
 
 interface SondaggiAggregates {
   surveysCount: number
+  participantsCount: number
   totalResponses: number
-  completionRateFraction: number
-  averageResponses: number
+  engagementRatePercent: number
 }
 
 interface VideoAggregates {
@@ -166,31 +167,6 @@ interface RawVideoStat {
   watched_seconds: number
   vth?: number
   view_through_rate?: number
-}
-
-interface SondaggiGroupItem {
-  id: number
-  participants_count: number
-  source_url?: string
-}
-
-interface SondaggiGroupsResponse {
-  success: boolean
-  data?: SondaggiGroupItem[] | null
-  error?: unknown
-  timestamp?: string
-}
-
-interface SondaggiQuizPayload {
-  count_response?: number
-  count_quiz?: number
-}
-
-interface SondaggiQuizResponse {
-  success: boolean
-  data?: SondaggiQuizPayload | null
-  error?: unknown
-  timestamp?: string
 }
 
 interface SiteUniqueUserResponse {
@@ -333,35 +309,7 @@ async function getSiteAggregates(start: string, end: string): Promise<SiteAggreg
 }
 
 async function getSondaggiAggregates(): Promise<SondaggiAggregates | null> {
-  const [groupsResp, quizResp] = await Promise.all([
-    fetchJson<SondaggiGroupsResponse>(`/api/v1/sondaggi/groups`),
-    fetchJson<SondaggiQuizResponse>(`/api/v1/sondaggi/quiz`),
-  ])
-  if (!groupsResp?.success || !groupsResp.data) {
-    return null
-  }
-
-  const rows = Array.isArray(groupsResp.data) ? groupsResp.data : []
-  const uniqueSurveyIds = new Set<number>()
-  const uniqueSourceUrls = new Set<string>()
-  for (const row of rows) {
-    uniqueSurveyIds.add(row.id)
-    if (typeof row.source_url === 'string' && row.source_url.trim().length > 0) {
-      uniqueSourceUrls.add(row.source_url.trim())
-    }
-  }
-  const quizCount = Number(quizResp?.data?.count_quiz ?? 0)
-  const quizResponses = Number(quizResp?.data?.count_response ?? 0)
-  const surveysCount = uniqueSurveyIds.size + (Number.isFinite(quizCount) ? quizCount : 0)
-  const totalResponses = uniqueSourceUrls.size + (Number.isFinite(quizResponses) ? quizResponses : 0)
-  const averageResponses = surveysCount > 0 ? totalResponses / surveysCount : 0
-
-  return {
-    surveysCount,
-    totalResponses,
-    completionRateFraction: 0,
-    averageResponses,
-  }
+  return fetchSondaggiAggregates(DATA_API_BASE_URL)
 }
 
 async function getSocialAggregates(): Promise<{
@@ -530,8 +478,11 @@ async function handleSummary(_req: Request, res: Response) {
           case 'surveys-total-responses':
             current = sondaggiAgg.totalResponses
             break
-          case 'surveys-average-responses':
-            current = sondaggiAgg.averageResponses
+          case 'surveys-participants-count':
+            current = sondaggiAgg.participantsCount
+            break
+          case 'sondaggi-engagement-rate':
+            current = sondaggiAgg.engagementRatePercent / 100
             break
           default:
             current = 0

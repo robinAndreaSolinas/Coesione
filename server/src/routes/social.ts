@@ -8,6 +8,18 @@ import {
 
 const router = Router()
 
+router.get('/post-count', async (_req: Request, res: Response) => {
+  try {
+    const data = await fetchSocialPostCount()
+    res.json({ success: true, data })
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      error: e instanceof Error ? e.message : 'Errore',
+    })
+  }
+})
+
 router.get('/summary', async (_req: Request, res: Response) => {
   try {
     const data = await fetchSocialSummary()

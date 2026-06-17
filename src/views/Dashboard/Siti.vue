@@ -24,21 +24,45 @@
           :goal="sitiGoals.articoliPubblicati"
           :trend="null"
           :progress-percent="sitiCurrent.articoliPubblicati.progress"
-        />
+        >
+          <template #footer>
+            <div
+              class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-snug text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+            >
+              In corso il controllo dei dati.
+            </div>
+          </template>
+        </metric-card>
         <metric-card
           label="Articoli importati dalla carta"
           :value="sitiCurrent.articoliStampati.value"
           :goal="sitiGoals.articoliStampati"
           :trend="null"
           :progress-percent="sitiCurrent.articoliStampati.progress"
-        />
+        >
+          <template #footer>
+            <div
+              class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-snug text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+            >
+              In corso il controllo dei dati.
+            </div>
+          </template>
+        </metric-card>
         <metric-card
           label="Articoli digitali (web)"
           :value="sitiCurrent.articoliDigitali.value"
           :goal="sitiGoals.articoliDigitali"
           :trend="null"
           :progress-percent="sitiCurrent.articoliDigitali.progress"
-        />
+        >
+          <template #footer>
+            <div
+              class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-snug text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+            >
+              In corso il controllo dei dati.
+            </div>
+          </template>
+        </metric-card>
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress

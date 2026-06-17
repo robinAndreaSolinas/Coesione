@@ -1,118 +1,30 @@
 import type { Request, Response } from 'express'
 import { Router } from 'express'
 import { DATA_API_BASE_URL } from '../config.js'
+import { fetchSondaggiAggregates } from '../lib/sondaggiData.js'
 
-declare const fetch: (
-  url: string,
-  options?: {
-    method?: string
-    headers?: Record<string, string>
-  }
-) => Promise<{
-  ok: boolean
-  status: number
-  statusText: string
-  json(): Promise<unknown>
-}>
-
-interface SondaggiGroupItem {
-  id: number
-  participants_count: number
-  source_url?: string
-}
-
-interface SondaggiGroupsResponse {
-  success: boolean
-  data?: SondaggiGroupItem[] | null
-  error?: unknown
-  timestamp?: string
-}
-
-interface SondaggiQuizPayload {
-  count_response?: number
-  count_quiz?: number
-}
-
-interface SondaggiQuizResponse {
-  success: boolean
-  data?: SondaggiQuizPayload | null
-  error?: unknown
-  timestamp?: string
-}
-
-export interface SondaggiStatsPayload {
+export type SondaggiStatsPayload = {
   surveysCount: number
+  participantsCount: number
   totalResponses: number
-  completionRate: number
-  averageResponses: number
-  logora: {
-    surveysCount: number
-    totalResponses: number
-  }
-  quiz: {
-    surveysCount: number
-    totalResponses: number
-  }
+  engagementRatePercent: number
 }
 
 const router = Router()
 
-async function fetchJson<T>(pathWithQuery: string): Promise<T> {
-  const url = `${DATA_API_BASE_URL}${pathWithQuery}`
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`Data API error: ${res.status} ${res.statusText}`)
-  }
-  const data = await res.json()
-  return data as T
-}
-
 router.get('/stats', async (_req: Request, res: Response) => {
   try {
-    const [groupsResp, quizResp] = await Promise.all([
-      fetchJson<SondaggiGroupsResponse>('/api/v1/sondaggi/groups'),
-      fetchJson<SondaggiQuizResponse>('/api/v1/sondaggi/quiz'),
-    ])
-
-    if (!groupsResp?.success || !groupsResp.data) {
+    const agg = await fetchSondaggiAggregates(DATA_API_BASE_URL)
+    if (!agg) {
       res.status(502).json({ error: 'Risposta non valida dal data API' })
       return
     }
 
-    const rows = Array.isArray(groupsResp.data) ? groupsResp.data : []
-    const uniqueSurveyIds = new Set<number>()
-    const uniqueSourceUrls = new Set<string>()
-    for (const row of rows) {
-      uniqueSurveyIds.add(row.id)
-      if (typeof row.source_url === 'string' && row.source_url.trim().length > 0) {
-        uniqueSourceUrls.add(row.source_url.trim())
-      }
-    }
-    const quizCount = Number(quizResp?.data?.count_quiz ?? 0)
-    const quizResponses = Number(quizResp?.data?.count_response ?? 0)
-
-    const logoraSurveysCount = uniqueSurveyIds.size
-    const logoraResponses = uniqueSourceUrls.size
-    const quizSurveysCount = Number.isFinite(quizCount) ? quizCount : 0
-    const quizResponsesTotal = Number.isFinite(quizResponses) ? quizResponses : 0
-
-    const surveysCount = logoraSurveysCount + quizSurveysCount
-    const totalResponses = logoraResponses + quizResponsesTotal
-    const averageResponses = surveysCount > 0 ? totalResponses / surveysCount : 0
-
     const payload: SondaggiStatsPayload = {
-      surveysCount,
-      totalResponses,
-      completionRate: 0,
-      averageResponses,
-      logora: {
-        surveysCount: logoraSurveysCount,
-        totalResponses: logoraResponses,
-      },
-      quiz: {
-        surveysCount: quizSurveysCount,
-        totalResponses: quizResponsesTotal,
-      },
+      surveysCount: agg.surveysCount,
+      participantsCount: agg.participantsCount,
+      totalResponses: agg.totalResponses,
+      engagementRatePercent: agg.engagementRatePercent,
     }
 
     res.json(payload)
@@ -122,4 +34,3 @@ router.get('/stats', async (_req: Request, res: Response) => {
 })
 
 export default router
-

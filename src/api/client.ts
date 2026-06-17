@@ -110,17 +110,9 @@ export interface ApiMetricSummary {
 
 export interface SondaggiStats {
   surveysCount: number
+  participantsCount: number
   totalResponses: number
-  completionRate: number
-  averageResponses: number
-  logora: {
-    surveysCount: number
-    totalResponses: number
-  }
-  quiz: {
-    surveysCount: number
-    totalResponses: number
-  }
+  engagementRatePercent: number
 }
 
 function getToken(): string | null {

@@ -28,6 +28,7 @@ export function seed(db: Database.Database) {
     'social-comments',
     'siti-regional-development-understanding',
     'siti-cohesion-advocacy',
+    'surveys-average-responses',
     'video-completion-rate',
     'newsletter-subscribers-total',
     'social-youtube-engagement-rate',
@@ -99,9 +100,10 @@ export function seed(db: Database.Database) {
     { id: 'video-minutes-watched', title: 'Minuti guardati', category: 'video', path: '/video', value: 1_000_000, unit: 'M' },
 
     // Sondaggi
-    { id: 'surveys-count', title: 'Numero sondaggi', category: 'sondaggi', path: '/sondaggi', value: 10, unit: '' },
-    { id: 'surveys-total-responses', title: 'Risposte totali', category: 'sondaggi', path: '/sondaggi', value: 20_000, unit: 'K' },
-    { id: 'surveys-average-responses', title: 'Media risposte sondaggio', category: 'sondaggi', path: '/sondaggi', value: 50, unit: '' },
+    { id: 'surveys-count', title: 'Numero sondaggi', category: 'sondaggi', path: '/sondaggi', value: 5, unit: '' },
+    { id: 'surveys-participants-count', title: 'Utenti unici', category: 'sondaggi', path: '/sondaggi', value: 1_000, unit: '' },
+    { id: 'surveys-total-responses', title: 'Risposte totali', category: 'sondaggi', path: '/sondaggi', value: 10_000, unit: '' },
+    { id: 'sondaggi-engagement-rate', title: 'Engagement rate', category: 'sondaggi', path: '/sondaggi', value: 0.01, unit: '%' },
     { id: 'sondaggi-regional-development-understanding', title: 'Improved understanding Regional Development', category: 'sondaggi', path: '/sondaggi', value: 0.8, unit: '%' },
     { id: 'sondaggi-cohesion-advocacy', title: 'Cohesion Advocacy', category: 'sondaggi', path: '/sondaggi', value: 0.15, unit: '%' },
     { id: 'sondaggi-satisfaction-rate', title: 'Satisfaction rate', category: 'sondaggi', path: '/sondaggi', value: 4, unit: '' },
@@ -127,5 +129,14 @@ export function seed(db: Database.Database) {
   ).run()
   db.prepare(
     `UPDATE objectives SET title = 'Articoli importati dalla carta' WHERE id = 'articles-printed-count'`
+  ).run()
+  db.prepare(
+    `UPDATE objectives SET title = 'Utenti unici', value = 1000, unit = '' WHERE id = 'surveys-participants-count'`
+  ).run()
+  db.prepare(
+    `UPDATE objectives SET value = 10000, unit = '' WHERE id = 'surveys-total-responses'`
+  ).run()
+  db.prepare(
+    `UPDATE objectives SET value = 5 WHERE id = 'surveys-count'`
   ).run()
 }

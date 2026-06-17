@@ -3,11 +3,17 @@
     <page-breadcrumb page-title="Analitiche Sondaggi + Webinar" />
     <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Sondaggi + Webinar</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
-      <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 md:gap-6">
+      <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-6">
         <metric-card
           label="Numero sondaggi"
           :value="sondaggiCurrent.numeroSondaggi"
           :goal="sondaggiGoals.numeroSondaggi"
+          :trend="null"
+        />
+        <metric-card
+          label="Utenti unici"
+          :value="sondaggiCurrent.partecipanti"
+          :goal="sondaggiGoals.partecipanti"
           :trend="null"
         />
         <metric-card
@@ -17,9 +23,9 @@
           :trend="null"
         />
         <metric-card
-          label="Media risposte/sondaggio"
-          :value="sondaggiCurrent.mediaRisposte"
-          :goal="sondaggiGoals.mediaRisposte"
+          label="Engagement rate (calcolato)"
+          :value="sondaggiCurrent.engagementRate"
+          :goal="sondaggiGoals.engagementRate"
           :trend="null"
         />
         <metric-card
@@ -68,43 +74,13 @@
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
           title="Obiettivo partecipazione"
-          description="Target risposte al mese"
+          description="Target risposte totali"
           :progress="Math.round(sondaggiProgressPercent)"
           :target-percent="parseInt(goals.sondaggi.targetPercent) || 100"
           :target-label="sondaggiGoals.risposteTotali"
           :current-label="sondaggiCurrent.risposteTotali"
           :progress-text="`Hai raggiunto circa ${Math.round(sondaggiProgressPercent)}% dell'obiettivo.`"
         />
-      </div>
-      <div class="col-span-12 grid gap-4 md:grid-cols-2">
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-          <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Logora</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Dati da groups</p>
-          <div class="mt-4 grid grid-cols-2 gap-3">
-            <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
-              <div class="text-xs text-gray-500 dark:text-gray-400">Sondaggi</div>
-              <div class="mt-1 text-lg font-semibold text-gray-800 dark:text-white/90">{{ logoraSurveysLabel }}</div>
-            </div>
-            <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
-              <div class="text-xs text-gray-500 dark:text-gray-400">Risposte</div>
-              <div class="mt-1 text-lg font-semibold text-gray-800 dark:text-white/90">{{ logoraResponsesLabel }}</div>
-            </div>
-          </div>
-        </div>
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-          <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Quiz</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Dati da quiz</p>
-          <div class="mt-4 grid grid-cols-2 gap-3">
-            <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
-              <div class="text-xs text-gray-500 dark:text-gray-400">Sondaggi</div>
-              <div class="mt-1 text-lg font-semibold text-gray-800 dark:text-white/90">{{ quizSurveysLabel }}</div>
-            </div>
-            <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
-              <div class="text-xs text-gray-500 dark:text-gray-400">Risposte</div>
-              <div class="mt-1 text-lg font-semibold text-gray-800 dark:text-white/90">{{ quizResponsesLabel }}</div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </admin-layout>
@@ -120,6 +96,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
 import GoalProgress from '@/components/dashboard/GoalProgress.vue'
+import { formatDisplayValue } from '@/utils/metricFormat'
 
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
@@ -163,8 +140,9 @@ const sondaggiGoals = computed(() => {
 
   return {
     numeroSondaggi: goalFor('surveys-count', goals.value.sondaggi.numeroSondaggi),
+    partecipanti: goalFor('surveys-participants-count', goals.value.sondaggi.partecipanti),
     risposteTotali: goalFor('surveys-total-responses', goals.value.sondaggi.risposteTotali),
-    mediaRisposte: goalFor('surveys-average-responses', goals.value.sondaggi.mediaRisposte),
+    engagementRate: goalFor('sondaggi-engagement-rate', goals.value.sondaggi.engagementRate),
     satisfactionRate: goalFor('sondaggi-satisfaction-rate', goals.value.sondaggi.satisfactionRate),
     regionalDevelopmentUnderstanding: goalFor(
       'sondaggi-regional-development-understanding',
@@ -173,27 +151,19 @@ const sondaggiGoals = computed(() => {
     cohesionAdvocacy: goalFor('sondaggi-cohesion-advocacy', goals.value.sondaggi.cohesionAdvocacy),
   }
 })
+
 const sondaggiCurrent = computed(() => {
-  const countObj = objectives.value.find((o) => o.id === 'surveys-count')
-  const totalRespObj = objectives.value.find((o) => o.id === 'surveys-total-responses')
-  const avgRespObj = objectives.value.find((o) => o.id === 'surveys-average-responses')
-
-  const countUnit = countObj?.unit ?? ''
-  const totalRespUnit = totalRespObj?.unit ?? ''
-  const avgRespUnit = avgRespObj?.unit ?? ''
-
-  const countRaw = stats.value?.surveysCount ?? 0
-  const totalResponsesRaw = stats.value?.totalResponses ?? 0
-  const avgResponsesRaw = stats.value?.averageResponses ?? 0
-
-  const count = denormalizeValue(countRaw, countUnit)
-  const totalResponses = denormalizeValue(totalResponsesRaw, totalRespUnit)
-  const avgResponses = denormalizeValue(avgResponsesRaw, avgRespUnit)
+  function formatForObjective(id: string, raw: number): string {
+    const obj = objectives.value.find((o) => o.id === id)
+    const unit = obj?.unit ?? ''
+    return formatMetricValue(denormalizeValue(raw, unit), unit)
+  }
 
   return {
-    numeroSondaggi: formatMetricValue(count, countUnit),
-    risposteTotali: formatMetricValue(totalResponses, totalRespUnit),
-    mediaRisposte: formatMetricValue(avgResponses, avgRespUnit),
+    numeroSondaggi: formatForObjective('surveys-count', stats.value?.surveysCount ?? 0),
+    partecipanti: formatForObjective('surveys-participants-count', stats.value?.participantsCount ?? 0),
+    risposteTotali: formatForObjective('surveys-total-responses', stats.value?.totalResponses ?? 0),
+    engagementRate: formatDisplayValue(stats.value?.engagementRatePercent ?? 0, '%'),
   }
 })
 
@@ -206,9 +176,4 @@ const sondaggiProgressPercent = computed(() => {
   const percent = (currentBase / goalBase) * 100
   return Math.max(0, Math.min(percent, 999))
 })
-
-const logoraSurveysLabel = computed(() => formatMetricValue(stats.value?.logora?.surveysCount ?? 0, ''))
-const logoraResponsesLabel = computed(() => formatMetricValue(stats.value?.logora?.totalResponses ?? 0, ''))
-const quizSurveysLabel = computed(() => formatMetricValue(stats.value?.quiz?.surveysCount ?? 0, ''))
-const quizResponsesLabel = computed(() => formatMetricValue(stats.value?.quiz?.totalResponses ?? 0, ''))
 </script>
