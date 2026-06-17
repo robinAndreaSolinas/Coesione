@@ -43,13 +43,13 @@ const router = createRouter({
       path: '/siti',
       name: 'Siti',
       component: () => import('../views/Dashboard/Siti.vue'),
-      meta: { title: 'Analitiche Siti' },
+      meta: { title: 'Analitiche siti e carta' },
     },
     {
       path: '/sondaggi',
       name: 'Sondaggi',
       component: () => import('../views/Dashboard/Sondaggi.vue'),
-      meta: { title: 'Analitiche Sondaggi' },
+      meta: { title: 'Analitiche Sondaggi + Webinar' },
     },
     {
       path: '/admin/goals',

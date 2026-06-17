@@ -3,7 +3,7 @@
     <page-breadcrumb page-title="Analitiche Newsletter" />
     <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Newsletter</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
-      <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+      <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 md:gap-6">
         <metric-card
           label="Open rate (calcolato)"
           :value="openRateDisplay"
@@ -23,27 +23,34 @@
           :trend="null"
         />
         <metric-card
-          label="Iscritti totali"
-          :value="subscribersTotalDisplay"
-          :goal="newsletterGoals.iscrittiTotali"
+          label="Destinatari"
+          :value="destinatariDisplay"
           :trend="null"
         />
         <metric-card
-          label="Iscritti attivi"
-          :value="subscribersActiveDisplay"
-          :goal="newsletterGoals.iscrittiAttivi"
+          label="Feedback positivo (qualitativo)"
+          value="—"
+          :goal="newsletterGoals.feedbackPositive"
           :trend="null"
-        />
+        >
+          <template #footer>
+            <div
+              class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
+            >
+              Placeholder: non calcolabile in maniera programmatica
+            </div>
+          </template>
+        </metric-card>
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
-          title="Obiettivo iscritti"
-          description="Target trimestrale iscritti"
-          :progress="Math.round(subscribersDeltaPercent)"
+          title="Obiettivo open rate"
+          description="Target trimestrale open rate"
+          :progress="Math.round(openRateProgressPercent)"
           :target-percent="100"
-          :target-label="newsletterGoals.iscrittiTotali"
-          :current-label="subscribersTotalDisplay"
-          progress-text="Crescita costante. Obiettivo a portata di mano."
+          :target-label="newsletterGoals.openRate"
+          :current-label="openRateDisplay"
+          progress-text="Monitora l'open rate per valutare l'efficacia delle campagne."
         />
       </div>
       <div class="col-span-12 xl:col-span-5">
@@ -80,7 +87,7 @@ import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
-const { metrics, formatNumber, formatPercent } = useNewsletter()
+const { metrics, formatPercent } = useNewsletter()
 const { dailyPoints } = useNewsletterDaily()
 const { formatMetricValue } = useMetrics()
 
@@ -91,26 +98,19 @@ function denormalizeForUnit(raw: number, unit: string): number {
   return raw
 }
 
-function formatByObjectiveUnit(
-  raw: number,
-  id: string,
-  fallback: (v: number) => string,
-): string {
+function formatByObjectiveUnit(raw: number, id: string): string {
   const obj = objectives.value.find((o) => o.id === id)
-  if (!obj || !obj.unit) return fallback(raw)
+  if (!obj || !obj.unit) return String(Math.round(raw))
   return formatMetricValue(denormalizeForUnit(raw, obj.unit), obj.unit)
 }
 
 const openRateDisplay = computed(() => formatPercent(metrics.value.openRate))
 const clickRateDisplay = computed(() => formatPercent(metrics.value.clickRate))
-const subscribersTotalDisplay = computed(() =>
-  formatByObjectiveUnit(metrics.value.subscribersTotal, 'newsletter-subscribers-total', formatNumber),
-)
-const subscribersActiveDisplay = computed(() =>
-  formatByObjectiveUnit(metrics.value.subscribersActive, 'newsletter-subscribers-active', formatNumber),
+const destinatariDisplay = computed(() =>
+  formatByObjectiveUnit(metrics.value.subscribersActive, 'newsletter-subscribers-active'),
 )
 const sentTotalDisplay = computed(() =>
-  formatByObjectiveUnit(metrics.value.sentTotal, 'newsletter-sent', formatNumber),
+  formatByObjectiveUnit(metrics.value.sentTotal, 'newsletter-sent'),
 )
 
 const newsletterObjectivesById = computed(
@@ -132,30 +132,19 @@ const newsletterGoals = computed(() => {
   return {
     openRate: goalFor('newsletter-open-rate', goals.value.newsletter.openRate),
     clickRate: goalFor('newsletter-click-rate', goals.value.newsletter.clickRate),
-    iscrittiTotali: goalFor('newsletter-subscribers-total', goals.value.newsletter.iscrittiTotali),
-    iscrittiAttivi: goalFor('newsletter-subscribers-active', goals.value.newsletter.iscrittiAttivi),
     invii: goalFor('newsletter-sent', goals.value.newsletter.invii),
+    feedbackPositive: goalFor('newsletter-feedback-positive', '70%'),
   }
 })
 
-const subscribersDeltaPercent = computed(() => {
-  const obj = newsletterObjectivesById.value.get('newsletter-subscribers-total')
+const openRateProgressPercent = computed(() => {
+  const obj = newsletterObjectivesById.value.get('newsletter-open-rate')
   if (!obj || obj.value <= 0) return 0
-
-  let current = metrics.value.subscribersTotal
-
-  if (obj.unit === 'K') {
-    current = current / 1_000
-  } else if (obj.unit === 'M') {
-    current = current / 1_000_000
-  }
-
+  const current = metrics.value.openRate * 100
   const val = (current / obj.value) * 100
   if (!Number.isFinite(val) || val < 0) return 0
   return Math.min(val, 999)
 })
-
-const subscribersDeltaLabel = computed(() => `${subscribersDeltaPercent.value.toFixed(1)}%`)
 
 const monthlyBuckets = computed(() => {
   const byMonth = new Map<
@@ -164,7 +153,7 @@ const monthlyBuckets = computed(() => {
   >()
 
   dailyPoints.value.forEach((p) => {
-    const month = p.day.slice(0, 7) // YYYY-MM
+    const month = p.day.slice(0, 7)
     const bucket =
       byMonth.get(month) ?? { openSum: 0, clickSum: 0, count: 0, lastSubs: 0 }
     bucket.openSum += p.openRate
@@ -203,74 +192,4 @@ const performanceSeries = computed(() => [
     data: monthlyBuckets.value.map((m) => m.clickRate),
   },
 ])
-
-const lastTwoBuckets = computed(() => {
-  const buckets = monthlyBuckets.value
-  if (buckets.length === 0) {
-    return { current: null as null | (typeof buckets[number]), previous: null as null | (typeof buckets[number]) }
-  }
-  if (buckets.length === 1) {
-    return { current: buckets[0], previous: null as null | (typeof buckets[number]) }
-  }
-  return {
-    current: buckets[buckets.length - 1],
-    previous: buckets[buckets.length - 2],
-  }
-})
-
-const openRateCurrentMonth = computed(() => {
-  const b = lastTwoBuckets.value.current
-  return b ? Number(b.openRate.toFixed(2)) : 0
-})
-
-const openRatePreviousMonth = computed(() => {
-  const b = lastTwoBuckets.value.previous
-  return b ? Number(b.openRate.toFixed(2)) : 0
-})
-
-const clickRateCurrentMonth = computed(() => {
-  const b = lastTwoBuckets.value.current
-  return b ? Number(b.clickRate.toFixed(2)) : 0
-})
-
-const clickRatePreviousMonth = computed(() => {
-  const b = lastTwoBuckets.value.previous
-  return b ? Number(b.clickRate.toFixed(2)) : 0
-})
-
-const openRateTrend = computed(() => {
-  const buckets = monthlyBuckets.value
-  if (buckets.length < 2) return 0
-  const prev = buckets[buckets.length - 2].openRate
-  const curr = buckets[buckets.length - 1].openRate
-  const delta = curr - prev
-  if (!Number.isFinite(delta)) return 0
-  return Number(delta.toFixed(2))
-})
-
-const clickRateTrend = computed(() => {
-  const buckets = monthlyBuckets.value
-  if (buckets.length < 2) return 0
-  const prev = buckets[buckets.length - 2].clickRate
-  const curr = buckets[buckets.length - 1].clickRate
-  const delta = curr - prev
-  if (!Number.isFinite(delta)) return 0
-  return Number(delta.toFixed(2))
-})
-
-const subscribersTotalTrend = computed(() => {
-  const buckets = monthlyBuckets.value
-  if (buckets.length < 2) return 0
-  const prev = buckets[buckets.length - 2].subscribersTotal
-  const curr = buckets[buckets.length - 1].subscribersTotal
-  if (prev <= 0) return 0
-  const deltaPercent = ((curr - prev) / prev) * 100
-  if (!Number.isFinite(deltaPercent)) return 0
-  return Number(deltaPercent.toFixed(2))
-})
-
-const subscribersActiveTrend = computed(() => {
-  // Non abbiamo la serie mensile per gli attivi: usiamo lo stesso trend dei totali
-  return subscribersTotalTrend.value
-})
 </script>

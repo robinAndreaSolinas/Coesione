@@ -1,5 +1,6 @@
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { api, type ApiObjective } from '@/api/client'
+import { roundMetricDisplay, formatDisplayValue } from '@/utils/metricFormat'
 
 export interface Objective {
   id: string
@@ -29,12 +30,7 @@ function denormalizeValue(value: number, unit: string): number {
 }
 
 function formatGoal(value: number, unit: string): string {
-  // Qui `value` è già denormalizzato (valore \"visuale\")
-  if (unit === '%') return `${Math.round(value)}%`
-  if (unit === 'K') return `${value}K`
-  if (unit === 'M') return `${value}M`
-  if (unit === '-') return String(value)
-  return String(value)
+  return formatDisplayValue(value, unit)
 }
 
 export function useObjectives() {
@@ -48,8 +44,7 @@ export function useObjectives() {
         title: r.title,
         category: r.category as Objective['category'],
         path: r.path,
-        // value in API is normalizzato; in frontend lavoriamo col valore \"visuale\"
-        value: r.unit === '%' ? Math.round(denorm) : denorm,
+        value: roundMetricDisplay(denorm),
         unit: r.unit,
         }
       })
@@ -66,7 +61,7 @@ export function useObjectives() {
       const denorm = denormalizeValue(updated.value, updated.unit)
       objectives.value[idx] = {
         ...objectives.value[idx],
-        value: updated.unit === '%' ? Math.round(denorm) : denorm,
+        value: roundMetricDisplay(denorm),
         unit: updated.unit,
       }
     }

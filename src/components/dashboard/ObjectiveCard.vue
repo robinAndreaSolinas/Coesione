@@ -19,15 +19,24 @@
           {{ categoryLabel }}
         </span>
         <div class="mt-2 flex items-start justify-between gap-4">
-          <h3 class="line-clamp-2 text-sm font-semibold leading-snug text-gray-800 dark:text-white/90">
-            {{ objective.title }}
-          </h3>
+          <div class="min-w-0">
+            <h3 class="line-clamp-2 text-sm font-semibold leading-snug text-gray-800 dark:text-white/90">
+              {{ objective.title }}
+            </h3>
+            <p
+              v-if="subtitle"
+              class="mt-0.5 text-xs text-gray-500 dark:text-gray-400"
+            >
+              {{ subtitle }}
+            </p>
+          </div>
           <div class="shrink-0 text-right">
             <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Valore / Target
+              {{ hideTarget ? 'Valore' : 'Valore / Target' }}
             </div>
             <div class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90">
-              {{ currentLabelComputed }} / {{ targetLabelComputed }}
+              <template v-if="hideTarget">{{ currentLabelComputed }}</template>
+              <template v-else>{{ currentLabelComputed }} / {{ targetLabelComputed }}</template>
             </div>
           </div>
         </div>
@@ -48,17 +57,18 @@
 import { computed } from 'vue'
 import type { Objective } from '@/composables/useObjectives'
 
+import { formatDisplayValue } from '@/utils/metricFormat'
+
 const props = defineProps<{
   objective: Objective
   currentLabel?: string | null
   targetLabel?: string | null
+  subtitle?: string | null
+  hideTarget?: boolean
 }>()
 
 function formatGoal(value: number, unit: string): string {
-  if (unit === '%') return `${value}%`
-  if (unit === 'K') return `${value}K`
-  if (unit === 'M') return `${value}M`
-  return String(value)
+  return formatDisplayValue(value, unit)
 }
 
 const categoryLabels: Record<string, string> = {
@@ -66,7 +76,7 @@ const categoryLabels: Record<string, string> = {
   video: 'Video',
   newsletter: 'Newsletter',
   siti: 'Siti',
-  sondaggi: 'Sondaggi',
+  sondaggi: 'Sondaggi + Webinar',
 }
 
 const categoryLabel = computed(() => categoryLabels[props.objective.category] ?? props.objective.category)

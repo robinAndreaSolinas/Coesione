@@ -95,7 +95,7 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     totalSent += r.sent
     totalOpen += r.open
     totalClick += r.click
-    if (r.sent >= 100) {
+    if (r.sent >= 1000) {
       sentCount += 1
     }
     totalAddSubs += r.add_subs
@@ -142,8 +142,8 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     clickRate: Number((clickRateFraction * 100).toFixed(1)),
     subscribersTotal,
     subscribersActive,
-    // "Policy briefs e newsletter distribuiti": conta invii effettivi (sent >= 100)
-    sentTotal: sentCount,
+    // "Policy briefs e newsletter distribuiti": +1 per riga con sent >= 1000, poi / 3
+    sentTotal: Math.floor(sentCount / 3),
     daily,
   }
 }

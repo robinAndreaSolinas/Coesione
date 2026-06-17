@@ -1,5 +1,6 @@
 import { ref, onMounted, computed } from 'vue'
 import { api, type ApiMetricSummary } from '@/api/client'
+import { formatDisplayValue } from '@/utils/metricFormat'
 
 export type MetricCategory = 'social' | 'video' | 'newsletter' | 'siti' | 'sondaggi'
 
@@ -36,11 +37,7 @@ function denormalizeValue(value: number, unit: string): number {
 }
 
 function formatMetricValue(value: number, unit: string): string {
-  const rounded = Math.round(value * 10) / 10
-  if (unit === '%') return `${rounded}%`
-  if (unit === 'K') return `${rounded}K`
-  if (unit === 'M') return `${rounded}M`
-  return String(rounded)
+  return formatDisplayValue(value, unit)
 }
 
 export function useMetrics() {

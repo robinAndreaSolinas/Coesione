@@ -72,7 +72,7 @@
                           <label class="mb-1 block text-xs text-gray-500">Valore</label>
                           <input
                             type="number"
-                            :step="obj.unit === '%' ? 1 : 'any'"
+                            :step="0.01"
                             :value="obj.value"
                             @input="onValueInput(obj, ($event.target as HTMLInputElement).value)"
                             class="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
@@ -201,6 +201,7 @@
 </template>
 
 <script setup lang="ts">
+import { roundMetricDisplay } from '@/utils/metricFormat'
 import { computed, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
@@ -217,7 +218,7 @@ const categoryLabels: Record<string, string> = {
   video: 'Video',
   newsletter: 'Newsletter',
   siti: 'Siti',
-  sondaggi: 'Sondaggi',
+  sondaggi: 'Sondaggi + Webinar',
 }
 
 const categoryOrder = ['social', 'video', 'newsletter', 'siti', 'sondaggi']
@@ -257,29 +258,29 @@ function toggleGroup(category: string) {
   }
 }
 
-type SocialPlatformKey = 'facebook' | 'instagram' | 'tiktok' | 'youtube'
+type SocialPlatformKey = 'facebook' | 'instagram' | 'tiktok' | 'x'
 
-const socialPlatformOrder: SocialPlatformKey[] = ['facebook', 'instagram', 'tiktok', 'youtube']
+const socialPlatformOrder: SocialPlatformKey[] = ['facebook', 'instagram', 'tiktok', 'x']
 
 const socialPlatformLabels: Record<SocialPlatformKey, string> = {
   facebook: 'Facebook',
   instagram: 'Instagram',
   tiktok: 'TikTok',
-  youtube: 'YouTube',
+  x: 'X',
 }
 
 const socialPlatformBadgeClass: Record<SocialPlatformKey, string> = {
   facebook: 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400',
   instagram: 'bg-pink-50 text-pink-600 dark:bg-pink-500/15 dark:text-pink-400',
   tiktok: 'bg-gray-900 text-white dark:bg-gray-700 dark:text-white',
-  youtube: 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-400',
+  x: 'bg-gray-900 text-white dark:bg-gray-800 dark:text-white',
 }
 
 const socialPlatformCardBgClass: Record<SocialPlatformKey, string> = {
   facebook: 'bg-blue-50/60 dark:bg-blue-500/10',
   instagram: 'bg-pink-50/60 dark:bg-pink-500/10',
   tiktok: 'bg-gray-100/80 dark:bg-gray-700/30',
-  youtube: 'bg-red-50/60 dark:bg-red-500/10',
+  x: 'bg-gray-100/80 dark:bg-gray-800/30',
 }
 
 function cleanMetricTitle(obj: Objective): string {
@@ -294,7 +295,7 @@ function detectSocialPlatform(obj: Objective): SocialPlatformKey | null {
   if (id.startsWith('social-facebook-')) return 'facebook'
   if (id.startsWith('social-instagram-')) return 'instagram'
   if (id.startsWith('social-tiktok-')) return 'tiktok'
-  if (id.startsWith('social-youtube-')) return 'youtube'
+  if (id.startsWith('social-x-')) return 'x'
   return null
 }
 
@@ -314,14 +315,23 @@ const socialPlatformCards = computed(() => {
   }
   return socialPlatformOrder
     .filter((p) => map.has(p))
-    .map((p) => ({
-      key: `social-${p}`,
-      platform: p,
-      label: socialPlatformLabels[p],
-      badgeClass: socialPlatformBadgeClass[p],
-      cardBgClass: socialPlatformCardBgClass[p],
-      items: map.get(p) ?? [],
-    }))
+    .map((p) => {
+      const items = (map.get(p) ?? []).filter((obj) => {
+        if (p === 'facebook' || p === 'x') {
+          return obj.id.endsWith('-post-count')
+        }
+        return true
+      })
+      return {
+        key: `social-${p}`,
+        platform: p,
+        label: socialPlatformLabels[p],
+        badgeClass: socialPlatformBadgeClass[p],
+        cardBgClass: socialPlatformCardBgClass[p],
+        items,
+      }
+    })
+    .filter((card) => card.items.length > 0)
 })
 
 const socialGeneralItems = computed(() =>
@@ -356,15 +366,14 @@ function fromBase(base: number, unit: string): number {
 function onValueInput(obj: Objective, value: string) {
   const num = parseFloat(value)
   if (isNaN(num)) return
-  obj.value = obj.unit === '%' ? Math.round(num) : num
+  obj.value = roundMetricDisplay(num)
   debouncedSave(obj)
 }
 
 function onUnitChange(obj: Objective, unit: string) {
-  // converte il valore mantenendo la metrica assoluta
   const base = toBase(obj.value, obj.unit)
   const converted = fromBase(base, unit)
-  obj.value = unit === '%' ? Math.round(converted) : converted
+  obj.value = roundMetricDisplay(converted)
   obj.unit = unit
   debouncedSave(obj)
 }

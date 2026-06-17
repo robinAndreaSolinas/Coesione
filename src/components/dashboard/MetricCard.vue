@@ -63,6 +63,7 @@
         {{ trend >= 0 ? '+' : '' }}{{ trend }}%
       </span>
     </div>
+    <slot name="footer" />
   </div>
 </template>
 

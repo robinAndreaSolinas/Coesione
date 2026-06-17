@@ -231,8 +231,8 @@ const menuGroups = [
       { icon: ChatIcon, name: "Social", path: "/social", pageKey: "Social" },
       { icon: CameraVideoIcon, name: "Video", path: "/video", pageKey: "Video" },
       { icon: MailIcon, name: "Newsletter", path: "/newsletter", pageKey: "Newsletter" },
-      { icon: GlobeIcon, name: "Analitiche Siti", path: "/siti", pageKey: "Siti" },
-      { icon: SlidersDoubleIcon, name: "Sondaggi", path: "/sondaggi", pageKey: "Sondaggi" },
+      { icon: GlobeIcon, name: "Analitiche siti e carta", path: "/siti", pageKey: "Siti" },
+      { icon: SlidersDoubleIcon, name: "Sondaggi + Webinar", path: "/sondaggi", pageKey: "Sondaggi" },
     ],
   },
   {

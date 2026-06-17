@@ -1,7 +1,7 @@
 <template>
   <admin-layout>
-    <page-breadcrumb page-title="Analitiche Siti" />
-    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Analitiche Siti</h1>
+    <page-breadcrumb page-title="Analitiche siti e carta" />
+    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Analitiche siti e carta</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
         <metric-card
@@ -12,7 +12,7 @@
           :progress-percent="sitiCurrent.utentiUniciArticoli.progress"
         />
         <metric-card
-          label="Pagine viste articoli"
+          label="Pagine viste medie per articolo"
           :value="sitiCurrent.pagineVisteArticoli.value"
           :goal="sitiGoals.pagineVisteArticoli"
           :trend="null"
@@ -26,7 +26,7 @@
           :progress-percent="sitiCurrent.articoliPubblicati.progress"
         />
         <metric-card
-          label="Articoli stampati (carta)"
+          label="Articoli importati dalla carta"
           :value="sitiCurrent.articoliStampati.value"
           :goal="sitiGoals.articoliStampati"
           :trend="null"
@@ -43,7 +43,7 @@
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
           title="Obiettivo traffico"
-          description="Target mensile pagine viste"
+          description="Target pagine viste medie per articolo"
           :progress="Math.round(sitiCurrent.pagineVisteArticoli.progress ?? 0)"
           :target-percent="100"
           :target-label="sitiGoals.pagineVisteArticoli"
@@ -195,6 +195,12 @@ const sitiGoals = computed(() => {
   }
 })
 
+const avgPageviewsPerArticle = computed(() => {
+  const articles = articlesPublished.value
+  if (articles <= 0) return 0
+  return pageviews.value / articles
+})
+
 const sitiCurrent = computed(() => {
   function currentFor(id: string, raw: number) {
     const obj = objectives.value.find((o) => o.id === id)
@@ -217,7 +223,7 @@ const sitiCurrent = computed(() => {
 
   return {
     utentiUniciArticoli: currentFor('articles-unique-users', uniqueUsersMonthAvg.value),
-    pagineVisteArticoli: currentFor('articles-pageviews', pageviews.value),
+    pagineVisteArticoli: currentFor('articles-pageviews', avgPageviewsPerArticle.value),
     articoliPubblicati: currentFor('articles-published-count', articlesPublished.value),
     articoliStampati: currentFor('articles-printed-count', articlesPrinted.value),
     articoliDigitali: currentFor('articles-digital-count', articlesDigital.value),

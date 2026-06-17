@@ -86,6 +86,7 @@ export interface SocialSummaryData {
 
 export interface SocialPlatformPoint {
   reach: number
+  reachTotal?: number
   interactions: number
   engagementRatePercent: number
   postsCount: number
@@ -94,7 +95,7 @@ export interface SocialPlatformPoint {
 export interface SocialPlatformsData {
   facebook: SocialPlatformPoint
   instagram: SocialPlatformPoint
-  youtube: SocialPlatformPoint
+  x: SocialPlatformPoint
   tiktok: SocialPlatformPoint
 }
 

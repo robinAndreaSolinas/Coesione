@@ -3,7 +3,7 @@
     <page-breadcrumb page-title="Analitiche Video" />
     <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Video</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
-      <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+      <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
         <metric-card
           label="Numero video"
           :value="audiovisualLabel"
@@ -18,20 +18,15 @@
           label="Minuti guardati"
           :value="minutesLabel"
         />
-        <metric-card
-          label="Completion rate"
-          :value="completionRateLabel"
-          :goal="videoGoals.completionRate"
-        />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
-          title="Obiettivo visualizzazioni"
-          description="Target visualizzazioni e minuti guardati"
+          title="Obiettivo stream"
+          description="Target visualizzazioni video"
           :progress="videoProgress"
           :target-percent="100"
-          :target-label="videoGoals.completionRate"
-          :current-label="completionRateLabel"
+          :target-label="videoGoals.audience"
+          :current-label="audienceLabel"
           :progress-text="`Hai raggiunto circa ${videoProgress}% dell'obiettivo.`"
         />
       </div>
@@ -103,7 +98,6 @@ const videoGoals = computed(() => {
     audiovisualCount: goalFor('video-audiovisual-count', goals.value.video.audiovisualCount),
     audience: goalFor('video-audience', goals.value.video.audience),
     minuti: goalFor('video-minutes-watched', goals.value.video.minuti),
-    completionRate: goalFor('video-completion-rate', goals.value.video.completionRate),
   }
 })
 
@@ -118,7 +112,6 @@ const videoUnits = computed(() => {
     audiovisualCount: byId.get('video-audiovisual-count')?.unit ?? '',
     audience: byId.get('video-audience')?.unit ?? '',
     minuti: byId.get('video-minutes-watched')?.unit ?? '',
-    completionRate: byId.get('video-completion-rate')?.unit ?? '%',
   }
 })
 
@@ -138,9 +131,6 @@ const audienceValue = computed(() =>
 const minutesWatchedValue = computed(() =>
   denormalizeValue(stats.value?.minutesWatched ?? 0, videoUnits.value.minuti || '')
 )
-const completionRateValue = computed(() =>
-  denormalizeValue(stats.value?.vthAvg ?? 0, videoUnits.value.completionRate || '%')
-)
 
 const audiovisualLabel = computed(() =>
   formatMetricValue(audiovisualCountValue.value, videoUnits.value.audiovisualCount || ''),
@@ -151,28 +141,18 @@ const audienceLabel = computed(() =>
 const minutesLabel = computed(() =>
   formatMetricValue(minutesWatchedValue.value, videoUnits.value.minuti || ''),
 )
-const completionRateLabel = computed(() =>
-  formatMetricValue(completionRateValue.value, videoUnits.value.completionRate || '%'),
-)
-const completionRateGoalValue = computed(() => {
-  const obj = objectives.value.find((o) => o.id === 'video-completion-rate')
-  if (obj && obj.value > 0) return obj.value
-  const fallback = goals.value.video.completionRate || goals.value.video.target || '0'
-  const parsed = Number(String(fallback).replace('%', ''))
-  return Number.isFinite(parsed) ? parsed : 0
-})
 
 const videoProgress = computed(() => {
-  const goal = completionRateGoalValue.value
-  if (goal <= 0) return 0
-  const current = completionRateValue.value
-  return Math.max(0, Math.min(999, Math.round((current / goal) * 100)))
+  const obj = objectives.value.find((o) => o.id === 'video-audience')
+  const goalVisual = obj?.value ?? 0
+  if (goalVisual <= 0) return 0
+  return Math.max(0, Math.min(999, Math.round((audienceValue.value / goalVisual) * 100)))
 })
 
 const monthlyBuckets = computed(() => {
   const bucket = new Map<string, { stream: number; watchedMinutes: number }>()
   for (const d of stats.value?.daily ?? []) {
-    const month = d.date.slice(0, 7) // YYYY-MM
+    const month = d.date.slice(0, 7)
     const prev = bucket.get(month) ?? { stream: 0, watchedMinutes: 0 }
     prev.stream += d.stream
     prev.watchedMinutes += d.watchedSeconds / 60

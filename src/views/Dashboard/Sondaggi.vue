@@ -1,9 +1,9 @@
 <template>
   <admin-layout>
-    <page-breadcrumb page-title="Analitiche Sondaggi" />
-    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Sondaggi</h1>
+    <page-breadcrumb page-title="Analitiche Sondaggi + Webinar" />
+    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Sondaggi + Webinar</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
-      <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+      <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 md:gap-6">
         <metric-card
           label="Numero sondaggi"
           :value="sondaggiCurrent.numeroSondaggi"
@@ -22,6 +22,48 @@
           :goal="sondaggiGoals.mediaRisposte"
           :trend="null"
         />
+        <metric-card
+          label="Satisfaction rate"
+          value="—"
+          :goal="sondaggiGoals.satisfactionRate"
+          :trend="null"
+        >
+          <template #footer>
+            <div
+              class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
+            >
+              Placeholder: score 1–5, target ≥ 4. Non calcolabile in maniera programmatica.
+            </div>
+          </template>
+        </metric-card>
+        <metric-card
+          label="Improved understanding Regional Development"
+          value="—"
+          :goal="sondaggiGoals.regionalDevelopmentUnderstanding"
+          :trend="null"
+        >
+          <template #footer>
+            <div
+              class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
+            >
+              Placeholder: survey post-workshop/dialogue. Non calcolabile in maniera programmatica.
+            </div>
+          </template>
+        </metric-card>
+        <metric-card
+          label="Cohesion Advocacy"
+          value="—"
+          :goal="sondaggiGoals.cohesionAdvocacy"
+          :trend="null"
+        >
+          <template #footer>
+            <div
+              class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
+            >
+              Placeholder: survey follow-up a chiusura intero progetto. Non calcolabile in maniera programmatica.
+            </div>
+          </template>
+        </metric-card>
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
@@ -123,6 +165,12 @@ const sondaggiGoals = computed(() => {
     numeroSondaggi: goalFor('surveys-count', goals.value.sondaggi.numeroSondaggi),
     risposteTotali: goalFor('surveys-total-responses', goals.value.sondaggi.risposteTotali),
     mediaRisposte: goalFor('surveys-average-responses', goals.value.sondaggi.mediaRisposte),
+    satisfactionRate: goalFor('sondaggi-satisfaction-rate', goals.value.sondaggi.satisfactionRate),
+    regionalDevelopmentUnderstanding: goalFor(
+      'sondaggi-regional-development-understanding',
+      goals.value.sondaggi.regionalDevelopmentUnderstanding,
+    ),
+    cohesionAdvocacy: goalFor('sondaggi-cohesion-advocacy', goals.value.sondaggi.cohesionAdvocacy),
   }
 })
 const sondaggiCurrent = computed(() => {

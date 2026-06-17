@@ -14,6 +14,8 @@
         :objective="obj"
         :current-label="metricByKeyObj[obj.id]?.currentLabel"
         :target-label="metricByKeyObj[obj.id]?.goalLabel"
+        :subtitle="obj.id === 'newsletter-subscribers-active' ? 'ad oggi' : undefined"
+        :hide-target="obj.id === 'newsletter-subscribers-active'"
       />
     </div>
     <div class="mt-8 space-y-6">
@@ -77,16 +79,14 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ObjectiveCard from '@/components/dashboard/ObjectiveCard.vue'
 import CategoryProgressCard from '@/components/dashboard/CategoryProgressCard.vue'
-/** Obiettivi per-piattaforma: dettaglio in pagina Social, non in overview Totale */
-const PLATFORM_OBJECTIVE_RE =
-  /^social-(facebook|instagram|youtube|tiktok)-|^social-interactions$/
+import { isVisibleOnTotale, countsTowardTotaleProgress } from '@/utils/totaleObjectives'
 
 const { objectives } = useObjectives()
 const { progressByCategory } = useCategoryProgress()
 const { metricsForView } = useMetrics()
 
 const totaleObjectives = computed(() =>
-  objectives.value.filter((o) => !PLATFORM_OBJECTIVE_RE.test(o.id)),
+  objectives.value.filter((o) => isVisibleOnTotale(o.id)),
 )
 const isDarkMode = ref(false)
 let themeObserver: MutationObserver | null = null
@@ -100,7 +100,7 @@ const metricByKeyObj = computed(() => {
 })
 
 const totaleMetrics = computed(() =>
-  metricsForView.value.filter((m) => !PLATFORM_OBJECTIVE_RE.test(m.key)),
+  metricsForView.value.filter((m) => countsTowardTotaleProgress(m.key)),
 )
 
 const overallTotalGoals = computed(() => totaleMetrics.value.length)
