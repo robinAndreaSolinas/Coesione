@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import { Router } from 'express'
 import { DATA_API_BASE_URL, getDefaultStartDate, getDefaultEndDate } from '../config.js'
-import { warn } from 'node:console'
+import { fetchNewsletterCountSent } from '../lib/newsletterData.js'
 
 declare const fetch: (
   url: string,
@@ -67,7 +67,10 @@ async function getNewsletterStats(start: string, end: string): Promise<{
   }[]
 }> {
   const path = `/api/v1/newsletter/stats?from_date=${start}&to_date=${end}`
-  const resp = await fetchJson<NewsletterStatsResponse>(path)
+  const [resp, sentTotal] = await Promise.all([
+    fetchJson<NewsletterStatsResponse>(path),
+    fetchNewsletterCountSent(DATA_API_BASE_URL),
+  ])
   const rows = resp?.data
   if (!Array.isArray(rows) || rows.length === 0) {
     return {
@@ -75,7 +78,7 @@ async function getNewsletterStats(start: string, end: string): Promise<{
       clickRate: 0,
       subscribersTotal: 0,
       subscribersActive: 0,
-      sentTotal: 0,
+      sentTotal,
       daily: [],
     }
   }
@@ -84,7 +87,6 @@ async function getNewsletterStats(start: string, end: string): Promise<{
   let totalSent = 0
   let totalOpen = 0
   let totalClick = 0
-  let sentCount = 0
   let totalAddSubs = 0
   let totalDelSubs = 0
 
@@ -95,9 +97,6 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     totalSent += r.sent
     totalOpen += r.open
     totalClick += r.click
-    if (r.sent >= 1000) {
-      sentCount += 1
-    }
     totalAddSubs += r.add_subs
     totalDelSubs += r.del_subs
 
@@ -142,8 +141,7 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     clickRate: Number((clickRateFraction * 100).toFixed(1)),
     subscribersTotal,
     subscribersActive,
-    // "Policy briefs e newsletter distribuiti": +1 per riga con sent >= 1000, poi / 3
-    sentTotal: Math.floor(sentCount / 3),
+    sentTotal,
     daily,
   }
 }

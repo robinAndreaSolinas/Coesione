@@ -8,6 +8,7 @@ import {
   fetchSocialSummary,
 } from '../lib/socialData.js'
 import { fetchSondaggiAggregates } from '../lib/sondaggiData.js'
+import { fetchNewsletterCountSent } from '../lib/newsletterData.js'
 
 declare const fetch: (
   url: string,
@@ -198,9 +199,10 @@ async function getNewsletterAggregates(start: string, end: string): Promise<News
   const ratePath = `/api/v1/newsletter/rate?from_date=${start}&to_date=${end}`
   const statsPath = `/api/v1/newsletter/stats?from_date=${start}&to_date=${end}`
 
-  const [rateResp, statsResp] = await Promise.all([
+  const [rateResp, statsResp, sentCount] = await Promise.all([
     fetchJson<NewsletterRateResponse>(ratePath),
     fetchJson<NewsletterStatsResponse>(statsPath),
+    fetchNewsletterCountSent(DATA_API_BASE_URL),
   ])
 
   const rows = rateResp?.data?.results
@@ -225,7 +227,6 @@ async function getNewsletterAggregates(start: string, end: string): Promise<News
 
   let subscribersTotal = 0
   let subscribersActive = 0
-  let sentCount = 0
 
   const statsRows = statsResp?.data
   if (Array.isArray(statsRows) && statsRows.length > 0) {
@@ -234,13 +235,9 @@ async function getNewsletterAggregates(start: string, end: string): Promise<News
     for (const r of statsRows) {
       addSubs += r.add_subs
       delSubs += r.del_subs
-      if (r.sent >= 1000) {
-        sentCount += 1
-      }
     }
     subscribersTotal = addSubs
     subscribersActive = Math.max(subscribersTotal - delSubs, 0)
-    sentCount = Math.floor(sentCount / 3)
   }
 
   return { openRateFraction, clickRateFraction, subscribersTotal, subscribersActive, sentCount }
