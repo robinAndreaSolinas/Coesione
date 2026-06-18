@@ -28,7 +28,8 @@ export type SocialPostCount = {
   message?: string
 }
 
-export type SocialPlatformKey = 'facebook' | 'instagram' | 'x' | 'tiktok'
+export type SocialUiPlatformKey = 'facebook' | 'instagram' | 'x' | 'tiktok'
+export type SocialAggregatePlatformKey = SocialUiPlatformKey | 'youtube' | 'other'
 
 export type SocialPlatformPoint = {
   /** Reach mostrata in UI (media post per IG/TikTok, totale altrove) */
@@ -80,10 +81,14 @@ export function rawReach(a: SocialAggregate): number {
   return safeNumber(a.total_reach)
 }
 
-/** Reach media sui singoli post (Instagram, TikTok). */
-export function averagePostReach(a: SocialAggregate | null): number {
+/** Reach media per post (Instagram, TikTok): total_reach / post pubblicati. */
+export function averagePostReach(a: SocialAggregate | null, postsCount?: number): number {
   if (!a) return 0
-  if (!Array.isArray(a.posts) || a.posts.length === 0) return rawReach(a)
+  const total = rawReach(a)
+  if (postsCount != null && postsCount > 0 && total > 0) {
+    return total / postsCount
+  }
+  if (!Array.isArray(a.posts) || a.posts.length === 0) return total
   let sum = 0
   let count = 0
   for (const post of a.posts) {
@@ -93,13 +98,17 @@ export function averagePostReach(a: SocialAggregate | null): number {
       count += 1
     }
   }
-  return count > 0 ? sum / count : rawReach(a)
+  return count > 0 ? sum / count : total
 }
 
-export function displayReach(a: SocialAggregate | null, platform: SocialPlatformKey): number {
+export function displayReach(
+  a: SocialAggregate | null,
+  platform: SocialAggregatePlatformKey,
+  postsCount?: number,
+): number {
   if (!a) return 0
   if (platform === 'instagram' || platform === 'tiktok') {
-    return averagePostReach(a)
+    return averagePostReach(a, postsCount)
   }
   return rawReach(a)
 }
@@ -121,13 +130,13 @@ export function platformEngagementRatePercent(a: SocialAggregate | null): number
 export function toPlatformPoint(
   a: SocialAggregate | null,
   postsCount: number,
-  platform: SocialPlatformKey,
+  platform: SocialAggregatePlatformKey,
 ): SocialPlatformPoint {
   if (!a) {
     return { reach: 0, reachTotal: 0, interactions: 0, engagementRatePercent: 0, postsCount }
   }
   const reachTotal = rawReach(a)
-  const reach = displayReach(a, platform)
+  const reach = displayReach(a, platform, postsCount)
   const interactions = platformInteractions(a)
   const engagementRatePercent = platformEngagementRatePercent(a)
   return { reach, reachTotal, interactions, engagementRatePercent, postsCount }
@@ -135,7 +144,7 @@ export function toPlatformPoint(
 
 export function platformPostsCount(
   postsMap: SocialPostCount,
-  platform: SocialPlatformKey,
+  platform: SocialUiPlatformKey,
 ): number {
   switch (platform) {
     case 'facebook':
@@ -166,15 +175,18 @@ export function totalPostsCount(postsMap: SocialPostCount): number {
 }
 
 export function summaryFromPlatforms(
-  platforms: SocialPlatformsData,
+  platformPoints: SocialPlatformPoint[],
   postsCount: number,
 ): SocialSummaryData {
-  const rows = [platforms.facebook, platforms.instagram, platforms.x, platforms.tiktok]
-  const reachTotal = rows.reduce((s, p) => s + p.reach, 0)
-  const reachSumForEr = rows.reduce((s, p) => s + p.reachTotal, 0)
-  const interactionsTotal = rows.reduce((s, p) => s + p.interactions, 0)
+  const reachTotal = platformPoints.reduce((s, p) => s + p.reach, 0)
+  const interactionsTotal = platformPoints.reduce((s, p) => s + p.interactions, 0)
+
+  // ER: solo piattaforme con reach > 0 (es. Facebook ha interazioni ma reach assente in API)
+  const forEr = platformPoints.filter((p) => p.reachTotal > 0)
+  const reachSumForEr = forEr.reduce((s, p) => s + p.reachTotal, 0)
+  const interactionsForEr = forEr.reduce((s, p) => s + p.interactions, 0)
   const engagementRateTotalPercent =
-    reachSumForEr > 0 ? (interactionsTotal / reachSumForEr) * 100 : 0
+    reachSumForEr > 0 ? (interactionsForEr / reachSumForEr) * 100 : 0
 
   return {
     interactionsTotal,
@@ -218,7 +230,7 @@ export async function fetchSocialPostCount(timeoutMs = 15000): Promise<SocialPos
   return payload && typeof payload === 'object' ? payload : {}
 }
 
-const PLATFORM_STATS_PATH: Record<SocialPlatformKey, string> = {
+const PLATFORM_STATS_PATH: Record<SocialUiPlatformKey, string> = {
   facebook: '/api/v1/social/facebook/stats',
   instagram: '/api/v1/social/instagram/stats',
   x: '/api/v1/social/x/stats',
@@ -253,10 +265,17 @@ export async function fetchSocialSummary(timeoutMs = 15000): Promise<SocialSumma
     fetchSocialPostCount(timeoutMs),
   ])
 
-  return summaryFromPlatforms(platforms, totalPostsCount(postsMap))
+  const allPoints: SocialPlatformPoint[] = [
+    platforms.facebook,
+    platforms.instagram,
+    platforms.x,
+    platforms.tiktok,
+  ]
+
+  return summaryFromPlatforms(allPoints, totalPostsCount(postsMap))
 }
 
-const PLATFORM_PREFIX: Record<string, SocialPlatformKey> = {
+const PLATFORM_PREFIX: Record<string, SocialUiPlatformKey> = {
   facebook: 'facebook',
   instagram: 'instagram',
   x: 'x',

@@ -9,6 +9,7 @@ import {
 } from '../lib/socialData.js'
 import { fetchSondaggiAggregates } from '../lib/sondaggiData.js'
 import { fetchNewsletterCountSent } from '../lib/newsletterData.js'
+import { fetchSiteStatsCount } from '../lib/siteData.js'
 
 declare const fetch: (
   url: string,
@@ -93,59 +94,13 @@ interface NewsletterAggregates {
   sentCount: number
 }
 
-interface SiteTotalStats {
-  days: number
-  count_url: number
-  pageview: number
-}
-
-interface SiteStatsByDate {
-  publish_date: string
-  count_url: number
-  pageview: number
-}
-
-interface SiteStatsResponse {
-  success: boolean
-  data: {
-    total: SiteTotalStats
-    by_date: SiteStatsByDate[]
-  }
-  error?: unknown
-  timestamp?: string
-}
-
 interface SiteAggregates {
   uniqueUsers: number
   pageviews: number
-  articlesPublished: number
-  articlesPrinted: number
-  articlesDigital: number
-}
-
-interface SiteStatsBySourceEntry {
-  publish_date: string
-  count_url: number
-  pageview: number
-}
-
-interface SiteSourceItem {
-  source: string
-  total_count_url: number
-  total_pageview: number
-  by_date: SiteStatsBySourceEntry[]
-}
-
-interface SiteStatsBySourceData {
-  total: SiteTotalStats
-  sources: SiteSourceItem[]
-}
-
-interface SiteStatsBySourceResponse {
-  success: boolean
-  data?: SiteStatsBySourceData
-  error?: unknown
-  timestamp?: string
+  articlesDigitalCount: number
+  articlesPrintedCount: number
+  articlesPublishedCount: number
+  avgPageviewsPerArticle: number
 }
 
 interface SondaggiAggregates {
@@ -244,43 +199,15 @@ async function getNewsletterAggregates(start: string, end: string): Promise<News
 }
 
 async function getSiteAggregates(start: string, end: string): Promise<SiteAggregates | null> {
-  const statsPath = `/api/v1/site/stats?from_date=${start}&to_date=${end}`
-  const bySourcePath = `/api/v1/site/stats/by-source?from_date=${start}&to_date=${end}`
-
-  const [statsResp, bySourceResp] = await Promise.all([
-    fetchJson<SiteStatsResponse>(statsPath),
-    fetchJson<SiteStatsBySourceResponse>(bySourcePath),
-  ])
-
-  if (!statsResp?.success || !statsResp.data) {
-    return null
-  }
-
-  const total = statsResp.data.total
-  if (!total) {
-    return null
-  }
-
-  const articlesPublished = total.count_url
-  const pageviews = total.pageview
-
-  let articlesPrinted = 0
-  let articlesDigital = 0
-
-  if (bySourceResp?.success && bySourceResp.data && Array.isArray(bySourceResp.data.sources)) {
-    for (const src of bySourceResp.data.sources) {
-      if (src.source === 'carta') {
-        articlesPrinted += src.total_count_url
-      } else {
-        articlesDigital += src.total_count_url
-      }
-    }
-  }
-
-  let uniqueUsers = 0
   try {
-    const uniquePath = `/api/v1/site/unique-user?from_date=${start}&to_date=${end}`
-    const uniqueResp = await fetchJson<SiteUniqueUserResponse>(uniquePath)
+    const [countAgg, uniqueResp] = await Promise.all([
+      fetchSiteStatsCount(DATA_API_BASE_URL),
+      fetchJson<SiteUniqueUserResponse>(
+        `/api/v1/site/unique-user?from_date=${start}&to_date=${end}`,
+      ).catch(() => null),
+    ])
+
+    let uniqueUsers = 0
     if (uniqueResp?.success && uniqueResp.data) {
       const outerData = uniqueResp.data as {
         success?: boolean
@@ -291,17 +218,18 @@ async function getSiteAggregates(start: string, end: string): Promise<SiteAggreg
         uniqueUsers = Number(inner.month_avg) || 0
       }
     }
-  } catch (e) {
-    console.error('Error fetching site unique users from data API:', e)
-    uniqueUsers = 0
-  }
 
-  return {
-    uniqueUsers,
-    pageviews,
-    articlesPublished,
-    articlesPrinted,
-    articlesDigital,
+    return {
+      uniqueUsers,
+      pageviews: countAgg.totalPageview,
+      articlesDigitalCount: countAgg.articlesDigitalCount,
+      articlesPrintedCount: countAgg.articlesPrintedCount,
+      articlesPublishedCount: countAgg.articlesPublishedCount,
+      avgPageviewsPerArticle: countAgg.avgPageviewsPerArticle,
+    }
+  } catch (e) {
+    console.error('Error fetching site stats/count from data API:', e)
+    return null
   }
 }
 
@@ -450,19 +378,16 @@ async function handleSummary(_req: Request, res: Response) {
             current = siteAgg.uniqueUsers
             break
           case 'articles-pageviews':
-            current =
-              siteAgg.articlesPublished > 0
-                ? siteAgg.pageviews / siteAgg.articlesPublished
-                : 0
+            current = siteAgg.avgPageviewsPerArticle
             break
           case 'articles-published-count':
-            current = siteAgg.articlesPublished
+            current = siteAgg.articlesPublishedCount
             break
           case 'articles-printed-count':
-            current = siteAgg.articlesPrinted
+            current = siteAgg.articlesPrintedCount
             break
           case 'articles-digital-count':
-            current = siteAgg.articlesDigital
+            current = siteAgg.articlesDigitalCount
             break
           default:
             current = 0

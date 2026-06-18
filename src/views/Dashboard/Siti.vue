@@ -23,28 +23,18 @@
           :value="sitiCurrent.articoliPubblicati.value"
           :goal="sitiGoals.articoliPubblicati"
           :trend="null"
-          :progress-percent="sitiCurrent.articoliPubblicati.progress"
-        >
-          <template #footer>
-            <div
-              class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-snug text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
-            >
-              In corso il controllo dei dati.
-            </div>
-          </template>
-        </metric-card>
+        />
         <metric-card
-          label="Articoli importati dalla carta"
-          :value="sitiCurrent.articoliStampati.value"
+          label="Articoli Stampati"
+          value="—"
           :goal="sitiGoals.articoliStampati"
           :trend="null"
-          :progress-percent="sitiCurrent.articoliStampati.progress"
         >
           <template #footer>
             <div
-              class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-snug text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+              class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
             >
-              In corso il controllo dei dati.
+              Placeholder: dato non fornito al momento
             </div>
           </template>
         </metric-card>
@@ -54,15 +44,7 @@
           :goal="sitiGoals.articoliDigitali"
           :trend="null"
           :progress-percent="sitiCurrent.articoliDigitali.progress"
-        >
-          <template #footer>
-            <div
-              class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-snug text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
-            >
-              In corso il controllo dei dati.
-            </div>
-          </template>
-        </metric-card>
+        />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
@@ -75,18 +57,11 @@
           progress-text="Buon traffico. Continua così per raggiungere l'obiettivo."
         />
       </div>
-      <div class="col-span-12 xl:col-span-5">
-        <analytics-chart
-          title="Utenti unici mensili"
-          :series="chartSeries"
-          :categories="uniqueUserCategories"
-        />
-      </div>
       <div class="col-span-12">
         <analytics-chart
-          title="Traffico sito"
-          description="Pagine viste e utenti unici"
-          :series="trafficSeries"
+          title="Utenti unici mensili"
+          description="Andamento utenti unici per mese"
+          :series="chartSeries"
           :categories="uniqueUserCategories"
         />
       </div>
@@ -107,10 +82,11 @@ import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
-const { pageviews, articlesPublished, dailyPoints } = useSiteMetrics()
-
-const articlesPrinted = ref(0)
-const articlesDigital = ref(0)
+const {
+  pageviews,
+  articlesDigitalCount,
+  articlesPublishedCount,
+} = useSiteMetrics()
 
 const uniqueUsersMonthAvg = ref(0)
 const uniqueUsersByMonth = ref<Array<{ eventDate: string; uug: number }>>([])
@@ -138,27 +114,6 @@ onMounted(async () => {
     } else {
       uniqueUsersMonthAvg.value = 0
       uniqueUsersByMonth.value = []
-    }
-
-    const bySourceRes = await fetch('/api/v1/site/stats/by-source', { headers })
-    if (bySourceRes.ok) {
-      const bySourceData = await bySourceRes.json()
-      const sources = bySourceData?.data?.sources
-      if (Array.isArray(sources)) {
-        let printed = 0
-        let digital = 0
-        for (const src of sources) {
-          const sourceName = String(src.source ?? '')
-          const count = Number(src.total_count_url ?? 0)
-          if (sourceName === 'carta') {
-            printed += count
-          } else {
-            digital += count
-          }
-        }
-        articlesPrinted.value = printed
-        articlesDigital.value = digital
-      }
     }
   } catch {
     uniqueUsersMonthAvg.value = 0
@@ -220,7 +175,7 @@ const sitiGoals = computed(() => {
 })
 
 const avgPageviewsPerArticle = computed(() => {
-  const articles = articlesPublished.value
+  const articles = articlesPublishedCount.value
   if (articles <= 0) return 0
   return pageviews.value / articles
 })
@@ -248,9 +203,8 @@ const sitiCurrent = computed(() => {
   return {
     utentiUniciArticoli: currentFor('articles-unique-users', uniqueUsersMonthAvg.value),
     pagineVisteArticoli: currentFor('articles-pageviews', avgPageviewsPerArticle.value),
-    articoliPubblicati: currentFor('articles-published-count', articlesPublished.value),
-    articoliStampati: currentFor('articles-printed-count', articlesPrinted.value),
-    articoliDigitali: currentFor('articles-digital-count', articlesDigital.value),
+    articoliPubblicati: currentFor('articles-published-count', articlesPublishedCount.value),
+    articoliDigitali: currentFor('articles-digital-count', articlesDigitalCount.value),
   }
 })
 
@@ -266,28 +220,4 @@ const chartSeries = computed(() => [
     data: uniqueUsersByMonth.value.map((p) => denormalizeUniqueUsersValue(p.uug, uniqueUsersUnit.value)),
   },
 ])
-
-const pageviewsByMonth = computed(() => {
-  const m = new Map<string, number>()
-  for (const p of dailyPoints.value) {
-    const key = String(p.publish_date).slice(0, 7) // YYYY-MM
-    m.set(key, (m.get(key) ?? 0) + Number(p.pageview ?? 0))
-  }
-  return m
-})
-
-const trafficSeries = computed(() => {
-  return [
-    {
-      name: 'Pagine viste',
-      data: uniqueUserCategories.value.map(
-        (month) => denormalizeSiteValue(pageviewsByMonth.value.get(month) ?? 0, objectives.value.find((o) => o.id === 'articles-pageviews')?.unit ?? '')
-      ),
-    },
-    {
-      name: 'Utenti unici (media mese)',
-      data: uniqueUsersByMonth.value.map((p) => denormalizeUniqueUsersValue(p.uug, uniqueUsersUnit.value)),
-    },
-  ]
-})
 </script>

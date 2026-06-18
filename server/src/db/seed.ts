@@ -64,7 +64,7 @@ export function seed(db: Database.Database) {
     { id: 'articles-unique-users', title: 'Utenti unici articoli', category: 'siti', path: '/siti', value: 50_000, unit: 'K' },
     { id: 'articles-pageviews', title: 'Pagine viste medie per articolo', category: 'siti', path: '/siti', value: 3_000, unit: '' },
     { id: 'articles-published-count', title: 'Numero articoli pubblicati', category: 'siti', path: '/siti', value: 500, unit: '' },
-    { id: 'articles-printed-count', title: 'Articoli importati dalla carta', category: 'siti', path: '/siti', value: 40, unit: '' },
+    { id: 'articles-printed-count', title: 'Articoli Stampati', category: 'siti', path: '/siti', value: 40, unit: '' },
     { id: 'articles-digital-count', title: 'Articoli digitali (web)', category: 'siti', path: '/siti', value: 190, unit: '' },
 
     // Social
@@ -128,7 +128,7 @@ export function seed(db: Database.Database) {
     `UPDATE objectives SET title = 'X · Contenuti pubblicati' WHERE id = 'social-x-post-count'`
   ).run()
   db.prepare(
-    `UPDATE objectives SET title = 'Articoli importati dalla carta' WHERE id = 'articles-printed-count'`
+    `UPDATE objectives SET title = 'Articoli Stampati' WHERE id = 'articles-printed-count'`
   ).run()
   db.prepare(
     `UPDATE objectives SET title = 'Utenti unici', value = 1000, unit = '' WHERE id = 'surveys-participants-count'`

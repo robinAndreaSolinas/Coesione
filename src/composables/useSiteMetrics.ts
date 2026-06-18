@@ -1,5 +1,5 @@
 import { ref, onMounted, computed } from 'vue'
-import { api, type SiteMetrics, type SiteDailyPoint } from '@/api/client'
+import { api, type SiteMetrics } from '@/api/client'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -23,8 +23,9 @@ export function useSiteMetrics() {
 
   const uniqueUsers = computed(() => metrics.value?.uniqueUsers ?? 0)
   const pageviews = computed(() => metrics.value?.pageviews ?? 0)
-  const articlesPublished = computed(() => metrics.value?.articlesPublished ?? 0)
-  const dailyPoints = computed<SiteDailyPoint[]>(() => metrics.value?.daily ?? [])
+  const articlesDigitalCount = computed(() => metrics.value?.articlesDigitalCount ?? 0)
+  const articlesPrintedCount = computed(() => metrics.value?.articlesPrintedCount ?? 0)
+  const articlesPublishedCount = computed(() => metrics.value?.articlesPublishedCount ?? 0)
 
   return {
     loading,
@@ -32,9 +33,9 @@ export function useSiteMetrics() {
     metrics,
     uniqueUsers,
     pageviews,
-    articlesPublished,
-    dailyPoints,
+    articlesDigitalCount,
+    articlesPrintedCount,
+    articlesPublishedCount,
     reload: load,
   }
 }
-

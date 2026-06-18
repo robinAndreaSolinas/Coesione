@@ -5,6 +5,7 @@ export function isVisibleOnTotale(id: string): boolean {
   if (id === 'social-reach') return false
   if (id === 'surveys-average-responses') return false
   if (id === 'newsletter-feedback-positive') return false
+  if (id === 'articles-printed-count') return false
   if (id === 'sondaggi-regional-development-understanding') return false
   if (id === 'sondaggi-cohesion-advocacy') return false
   if (id === 'sondaggi-satisfaction-rate') return false
@@ -17,6 +18,7 @@ export function isVisibleOnTotale(id: string): boolean {
 export function countsTowardTotaleProgress(id: string): boolean {
   if (id === 'newsletter-subscribers-active') return false
   if (id === 'newsletter-feedback-positive') return false
+  if (id === 'articles-printed-count') return false
   if (id === 'sondaggi-regional-development-understanding') return false
   if (id === 'sondaggi-cohesion-advocacy') return false
   if (id === 'sondaggi-satisfaction-rate') return false

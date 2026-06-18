@@ -47,17 +47,12 @@ export interface NewsletterDailyPoint {
   subscribersTotal: number
 }
 
-export interface SiteDailyPoint {
-  publish_date: string
-  count_url: number
-  pageview: number
-}
-
 export interface SiteMetrics {
   uniqueUsers: number
   pageviews: number
-  articlesPublished: number
-  daily: SiteDailyPoint[]
+  articlesDigitalCount: number
+  articlesPrintedCount: number
+  articlesPublishedCount: number
 }
 
 export interface VideoDailyPoint {
