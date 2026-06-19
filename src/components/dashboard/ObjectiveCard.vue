@@ -1,8 +1,14 @@
 <template>
-  <router-link
-    :to="objective.path"
-    class="group block rounded-2xl border border-gray-200 bg-white p-4 transition-all hover:border-gray-300 hover:shadow-theme-md dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-gray-700 dark:hover:shadow-theme-lg md:p-5"
-    :class="borderAccentClass"
+  <component
+    :is="disableLink ? 'div' : 'router-link'"
+    :to="disableLink ? undefined : objective.path"
+    class="block rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] md:p-5"
+    :class="[
+      borderAccentClass,
+      disableLink
+        ? ''
+        : 'group transition-all hover:border-gray-300 hover:shadow-theme-md dark:hover:border-gray-700 dark:hover:shadow-theme-lg',
+    ]"
   >
     <div class="flex items-start gap-3">
       <div
@@ -42,6 +48,7 @@
         </div>
       </div>
       <svg
+        v-if="!disableLink"
         class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-500 dark:group-hover:text-brand-400"
         fill="none"
         stroke="currentColor"
@@ -50,7 +57,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
       </svg>
     </div>
-  </router-link>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -65,6 +72,7 @@ const props = defineProps<{
   targetLabel?: string | null
   subtitle?: string | null
   hideTarget?: boolean
+  disableLink?: boolean
 }>()
 
 function formatGoal(value: number, unit: string): string {
@@ -72,6 +80,7 @@ function formatGoal(value: number, unit: string): string {
 }
 
 const categoryLabels: Record<string, string> = {
+  totale: 'Totale',
   social: 'Social',
   video: 'Video',
   newsletter: 'Newsletter',
@@ -83,6 +92,7 @@ const categoryLabel = computed(() => categoryLabels[props.objective.category] ??
 
 const iconBgClass = computed(() => {
   const classes: Record<string, string> = {
+    totale: 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-white/80',
     social: 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400',
     video: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
     newsletter: 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400',
@@ -94,6 +104,7 @@ const iconBgClass = computed(() => {
 
 const badgeClass = computed(() => {
   const classes: Record<string, string> = {
+    totale: 'bg-gray-50 text-gray-600 dark:bg-white/10 dark:text-white/70',
     social: 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400',
     video: 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-400',
     newsletter: 'bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400',
@@ -105,6 +116,7 @@ const badgeClass = computed(() => {
 
 const borderAccentClass = computed(() => {
   const classes: Record<string, string> = {
+    totale: 'border-l-4 border-l-gray-500 dark:border-l-gray-400',
     social: 'border-l-4 border-l-blue-500 dark:border-l-blue-400',
     video: 'border-l-4 border-l-red-500 dark:border-l-red-400',
     newsletter: 'border-l-4 border-l-green-500 dark:border-l-green-400',
@@ -115,6 +127,8 @@ const borderAccentClass = computed(() => {
 })
 
 const iconPaths: Record<string, string> = {
+  totale:
+    '<svg fill="none" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.5 3.25C4.25736 3.25 3.25 4.25736 3.25 5.5V8.99998C3.25 10.2426 4.25736 11.25 5.5 11.25H9C10.2426 11.25 11.25 10.2426 11.25 8.99998V5.5C11.25 4.25736 10.2426 3.25 9 3.25H5.5ZM4.75 5.5C4.75 5.08579 5.08579 4.75 5.5 4.75H9C9.41421 4.75 9.75 5.08579 9.75 5.5V8.99998C9.75 9.41419 9.41421 9.74998 9 9.74998H5.5C5.08579 9.74998 4.75 9.41419 4.75 8.99998V5.5ZM5.5 12.75C4.25736 12.75 3.25 13.7574 3.25 15V18.5C3.25 19.7426 4.25736 20.75 5.5 20.75H9C10.2426 20.75 11.25 19.7427 11.25 18.5V15C11.25 13.7574 10.2426 12.75 9 12.75H5.5ZM4.75 15C4.75 14.5858 5.08579 14.25 5.5 14.25H9C9.41421 14.25 9.75 14.5858 9.75 15V18.5C9.75 18.9142 9.41421 19.25 9 19.25H5.5C5.08579 19.25 4.75 18.9142 4.75 18.5V15ZM12.75 5.5C12.75 4.25736 13.7574 3.25 15 3.25H18.5C19.7426 3.25 20.75 4.25736 20.75 5.5V8.99998C20.75 10.2426 19.7426 11.25 18.5 11.25H15C13.7574 11.25 12.75 10.2426 12.75 8.99998V5.5ZM15 4.75C14.5858 4.75 14.25 5.08579 14.25 5.5V8.99998C14.25 9.41419 14.5858 9.74998 15 9.74998H18.5C18.9142 9.74998 19.25 9.41419 19.25 8.99998V5.5C19.25 5.08579 18.9142 4.75 18.5 4.75H15ZM15 12.75C13.7574 12.75 12.75 13.7574 12.75 15V18.5C12.75 19.7426 13.7574 20.75 15 20.75H18.5C19.7426 20.75 20.75 19.7427 20.75 18.5V15C20.75 13.7574 19.7426 12.75 18.5 12.75H15ZM14.25 15C14.25 14.5858 14.5858 14.25 15 14.25H18.5C18.9142 14.25 19.25 14.5858 19.25 15V18.5C19.25 18.9142 18.9142 19.25 18.5 19.25H15C14.5858 19.25 14.25 18.9142 14.25 18.5V15Z" fill="currentColor"/></svg>',
   social: '<svg fill="none" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M4.00002 12.0957C4.00002 7.67742 7.58174 4.0957 12 4.0957C16.4183 4.0957 20 7.67742 20 12.0957C20 16.514 16.4183 20.0957 12 20.0957H5.06068L6.34317 18.8132C6.48382 18.6726 6.56284 18.4818 6.56284 18.2829C6.56284 18.084 6.48382 17.8932 6.34317 17.7526C4.89463 16.304 4.00002 14.305 4.00002 12.0957ZM12 2.5957C6.75332 2.5957 2.50002 6.849 2.50002 12.0957C2.50002 14.4488 3.35633 16.603 4.77303 18.262L2.71969 20.3154C2.50519 20.5299 2.44103 20.8525 2.55711 21.1327C2.6732 21.413 2.94668 21.5957 3.25002 21.5957H12C17.2467 21.5957 21.5 17.3424 21.5 12.0957C21.5 6.849 17.2467 2.5957 12 2.5957ZM7.62502 10.8467C6.93467 10.8467 6.37502 11.4063 6.37502 12.0967C6.37502 12.787 6.93467 13.3467 7.62502 13.3467H7.62512C8.31548 13.3467 8.87512 12.787 8.87512 12.0967C8.87512 11.4063 8.31548 10.8467 7.62512 10.8467H7.62502ZM10.75 12.0967C10.75 11.4063 11.3097 10.8467 12 10.8467H12.0001C12.6905 10.8467 13.2501 11.4063 13.2501 12.0967C13.2501 12.787 12.6905 13.3467 12.0001 13.3467H12C11.3097 13.3467 10.75 12.787 10.75 12.0967ZM16.375 10.8467C15.6847 10.8467 15.125 11.4063 15.125 12.0967C15.125 12.787 15.6847 13.3467 16.375 13.3467H16.3751C17.0655 13.3467 17.6251 12.787 17.6251 12.0967C17.6251 11.4063 17.0655 10.8467 16.3751 10.8467H16.375Z" fill="currentColor"/></svg>',
   video: '<svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M5 6.75C5 5.7835 5.7835 5 6.75 5H14.25C15.2165 5 16 5.7835 16 6.75V8.25L18.659 6.478C19.8225 5.70233 21.375 6.53652 21.375 7.933V16.067C21.375 17.4635 19.8225 18.2977 18.659 17.522L16 15.75V17.25C16 18.2165 15.2165 19 14.25 19H6.75C5.7835 19 5 18.2165 5 17.25V6.75ZM6.5 6.75V17.25C6.5 17.3881 6.61193 17.5 6.75 17.5H14.25C14.3881 17.5 14.5 17.3881 14.5 17.25V6.75C14.5 6.61193 14.3881 6.5 14.25 6.5H6.75C6.61193 6.5 6.5 6.61193 6.5 6.75ZM16 10.053V13.947L19.073 15.995C19.2392 16.1058 19.4617 15.9866 19.4617 15.787V8.213C19.4617 8.01336 19.2392 7.89415 19.073 8.005L16 10.053Z"/></svg>',
   newsletter: '<svg fill="none" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M3.5 8.187V17.25C3.5 17.6642 3.83579 18 4.25 18H19.75C20.1642 18 20.5 17.6642 20.5 17.25V8.18747L13.2873 13.2171C12.5141 13.7563 11.4866 13.7563 10.7134 13.2171L3.5 8.187ZM20.5 6.2286C20.5 6.23039 20.5 6.23218 20.5 6.23398V6.24336C20.4976 6.31753 20.4604 6.38643 20.3992 6.42905L12.4293 11.9867C12.1716 12.1664 11.8291 12.1664 11.5713 11.9867L3.60116 6.42885C3.538 6.38481 3.50035 6.31268 3.50032 6.23568C3.50028 6.10553 3.60577 6 3.73592 6H20.2644C20.3922 6 20.4963 6.10171 20.5 6.2286ZM22 6.25648V17.25C22 18.4926 20.9926 19.5 19.75 19.5H4.25C3.00736 19.5 2 18.4926 2 17.25V6.23398C2 6.22371 2.00021 6.2135 2.00061 6.20333C2.01781 5.25971 2.78812 4.5 3.73592 4.5H20.2644C21.2229 4.5 22 5.27697 22.0001 6.23549C22.0001 6.24249 22.0001 6.24949 22 6.25648Z" fill="currentColor"/></svg>',

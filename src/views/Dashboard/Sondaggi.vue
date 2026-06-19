@@ -29,7 +29,7 @@
           :trend="null"
         />
         <metric-card
-          label="Satisfaction rate"
+          label="Satisfaction rate structured dialogues"
           value="—"
           :goal="sondaggiGoals.satisfactionRate"
           :trend="null"

@@ -160,24 +160,17 @@ export function platformPostsCount(
   }
 }
 
-/** Totale post in dashboard: campo `all` da post/count (include youtube/other). */
+/** Totale post in dashboard: somma FB + IG + X + TikTok (come nello split). */
 export function totalPostsCount(postsMap: SocialPostCount): number {
-  const all = safeNumber(postsMap.all)
-  if (all > 0) return all
   return (
     platformPostsCount(postsMap, 'facebook') +
     platformPostsCount(postsMap, 'instagram') +
     platformPostsCount(postsMap, 'x') +
-    platformPostsCount(postsMap, 'tiktok') +
-    safeNumber(postsMap.other) +
-    safeNumber(postsMap.youtube)
+    platformPostsCount(postsMap, 'tiktok')
   )
 }
 
-export function summaryFromPlatforms(
-  platformPoints: SocialPlatformPoint[],
-  postsCount: number,
-): SocialSummaryData {
+export function summaryFromPlatforms(platformPoints: SocialPlatformPoint[]): SocialSummaryData {
   const reachTotal = platformPoints.reduce((s, p) => s + p.reach, 0)
   const interactionsTotal = platformPoints.reduce((s, p) => s + p.interactions, 0)
 
@@ -194,7 +187,7 @@ export function summaryFromPlatforms(
     sharesTotal: 0,
     commentsTotal: 0,
     engagementRateTotalPercent,
-    postsCount: safeNumber(postsCount),
+    postsCount: platformPoints.reduce((s, p) => s + p.postsCount, 0),
   }
 }
 
@@ -260,10 +253,7 @@ export async function fetchSocialPlatforms(timeoutMs = 15000): Promise<SocialPla
 }
 
 export async function fetchSocialSummary(timeoutMs = 15000): Promise<SocialSummaryData> {
-  const [platforms, postsMap] = await Promise.all([
-    fetchSocialPlatforms(timeoutMs),
-    fetchSocialPostCount(timeoutMs),
-  ])
+  const platforms = await fetchSocialPlatforms(timeoutMs)
 
   const allPoints: SocialPlatformPoint[] = [
     platforms.facebook,
@@ -272,7 +262,7 @@ export async function fetchSocialSummary(timeoutMs = 15000): Promise<SocialSumma
     platforms.tiktok,
   ]
 
-  return summaryFromPlatforms(allPoints, totalPostsCount(postsMap))
+  return summaryFromPlatforms(allPoints)
 }
 
 const PLATFORM_PREFIX: Record<string, SocialUiPlatformKey> = {

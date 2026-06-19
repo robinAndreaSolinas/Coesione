@@ -4,6 +4,7 @@ import { useMetrics } from './useMetrics'
 import { isVisibleOnTotale, countsTowardTotaleProgress } from '@/utils/totaleObjectives'
 
 const CATEGORY_LABELS: Record<string, string> = {
+  totale: 'Totale',
   social: 'Social',
   video: 'Video',
   newsletter: 'Newsletter',
@@ -15,7 +16,7 @@ export function useCategoryProgress() {
   const { metrics } = useMetrics()
 
   const progressByCategory = computed(() => {
-    const categories = ['social', 'video', 'newsletter', 'siti', 'sondaggi'] as const
+    const categories = ['totale', 'social', 'video', 'newsletter', 'siti', 'sondaggi'] as const
     return categories.map((cat) => {
       const rows = metrics.value.filter(
         (m) => m.category === cat && countsTowardTotaleProgress(m.key),

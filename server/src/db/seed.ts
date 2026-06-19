@@ -99,6 +99,9 @@ export function seed(db: Database.Database) {
     { id: 'video-audience', title: 'Audience', category: 'video', path: '/video', value: 200_000, unit: 'K' },
     { id: 'video-minutes-watched', title: 'Minuti guardati', category: 'video', path: '/video', value: 1_000_000, unit: 'M' },
 
+    // Totale (WP2)
+    { id: 'multimedia-engagement-rate', title: 'WP2 · ER Multimedia content', category: 'totale', path: '/', value: 0.1, unit: '%' },
+
     // Sondaggi
     { id: 'surveys-count', title: 'Numero sondaggi', category: 'sondaggi', path: '/sondaggi', value: 5, unit: '' },
     { id: 'surveys-participants-count', title: 'Utenti unici', category: 'sondaggi', path: '/sondaggi', value: 1_000, unit: '' },
@@ -106,7 +109,7 @@ export function seed(db: Database.Database) {
     { id: 'sondaggi-engagement-rate', title: 'Engagement rate', category: 'sondaggi', path: '/sondaggi', value: 0.01, unit: '%' },
     { id: 'sondaggi-regional-development-understanding', title: 'Improved understanding Regional Development', category: 'sondaggi', path: '/sondaggi', value: 0.8, unit: '%' },
     { id: 'sondaggi-cohesion-advocacy', title: 'Cohesion Advocacy', category: 'sondaggi', path: '/sondaggi', value: 0.15, unit: '%' },
-    { id: 'sondaggi-satisfaction-rate', title: 'Satisfaction rate', category: 'sondaggi', path: '/sondaggi', value: 4, unit: '' },
+    { id: 'sondaggi-satisfaction-rate', title: 'Satisfaction rate structured dialogues', category: 'sondaggi', path: '/sondaggi', value: 4, unit: '' },
   ]
   const insertObj = db.prepare(
     'INSERT OR IGNORE INTO objectives (id, title, category, path, value, unit) VALUES (?, ?, ?, ?, ?, ?)'
@@ -138,5 +141,11 @@ export function seed(db: Database.Database) {
   ).run()
   db.prepare(
     `UPDATE objectives SET value = 5 WHERE id = 'surveys-count'`
+  ).run()
+  db.prepare(
+    `UPDATE objectives SET title = 'Satisfaction rate structured dialogues' WHERE id = 'sondaggi-satisfaction-rate'`
+  ).run()
+  db.prepare(
+    `UPDATE objectives SET title = 'WP2 · ER Multimedia content', value = 0.1, unit = '%', category = 'totale', path = '/' WHERE id = 'multimedia-engagement-rate'`
   ).run()
 }

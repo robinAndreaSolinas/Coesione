@@ -10,6 +10,10 @@ import {
 import { fetchSondaggiAggregates } from '../lib/sondaggiData.js'
 import { fetchNewsletterCountSent } from '../lib/newsletterData.js'
 import { fetchSiteStatsCount } from '../lib/siteData.js'
+import {
+  multimediaEngagementRateFraction,
+  socialErComponents,
+} from '../lib/multimediaData.js'
 
 declare const fetch: (
   url: string,
@@ -428,6 +432,26 @@ async function handleSummary(_req: Request, res: Response) {
           default:
             current = 0
         }
+      } else if (obj.id === 'multimedia-engagement-rate' && socialData && videoAgg && siteAgg) {
+        const social = socialErComponents([
+          socialData.platforms.facebook,
+          socialData.platforms.instagram,
+          socialData.platforms.x,
+          socialData.platforms.tiktok,
+        ])
+        const articlesPageviewsGoal =
+          objectives.find((o) => o.id === 'articles-pageviews')?.value ?? 3000
+        current = multimediaEngagementRateFraction({
+          socialInteractions: social.interactions,
+          socialReach: social.reach,
+          socialPostsCount: social.postsCount,
+          videoCompletionRate: videoAgg.completionRateFraction,
+          videoAudience: videoAgg.audience,
+          videoCount: videoAgg.audiovisualCount,
+          avgPageviewsPerArticle: siteAgg.avgPageviewsPerArticle,
+          articlesPublishedCount: siteAgg.articlesPublishedCount,
+          pageviewsTargetPerArticle: articlesPageviewsGoal,
+        })
       }
 
       return {

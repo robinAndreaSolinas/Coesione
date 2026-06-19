@@ -16,6 +16,7 @@
         :target-label="metricByKeyObj[obj.id]?.goalLabel"
         :subtitle="obj.id === 'newsletter-subscribers-active' ? 'ad oggi' : undefined"
         :hide-target="obj.id === 'newsletter-subscribers-active'"
+        :disable-link="obj.category === 'totale'"
       />
     </div>
     <div class="mt-8 space-y-6">
@@ -86,7 +87,13 @@ const { progressByCategory } = useCategoryProgress()
 const { metricsForView } = useMetrics()
 
 const totaleObjectives = computed(() =>
-  objectives.value.filter((o) => isVisibleOnTotale(o.id)),
+  objectives.value
+    .filter((o) => isVisibleOnTotale(o.id))
+    .sort((a, b) => {
+      if (a.category === 'totale' && b.category !== 'totale') return -1
+      if (b.category === 'totale' && a.category !== 'totale') return 1
+      return 0
+    }),
 )
 const isDarkMode = ref(false)
 let themeObserver: MutationObserver | null = null
@@ -190,6 +197,7 @@ onBeforeUnmount(() => {
 
 function metricIconBg(category: string) {
   const map: Record<string, string> = {
+    totale: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400',
     social: 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400',
     video: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
     newsletter: 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400',

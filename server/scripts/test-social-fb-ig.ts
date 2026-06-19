@@ -95,7 +95,7 @@ async function testSummary() {
   ])
 
   const points = [platforms.facebook, platforms.instagram, platforms.x, platforms.tiktok]
-  const recomputed = summaryFromPlatforms(points, postsMap.all ?? 0)
+  const recomputed = summaryFromPlatforms(points)
 
   for (const [name, p] of [
     ['Facebook', platforms.facebook],
