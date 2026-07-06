@@ -1,35 +1,43 @@
 <template>
   <admin-layout>
-    <page-breadcrumb page-title="Analitiche Sondaggi + Webinar" />
-    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Sondaggi + Webinar</h1>
+    <page-breadcrumb :page-title="t('dashboard.sondaggi.breadcrumb')" />
+    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">{{ t('dashboard.sondaggi.title') }}</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-6">
         <metric-card
-          label="Numero sondaggi"
+          :label="t('dashboard.sondaggi.surveysCount')"
           :value="sondaggiCurrent.numeroSondaggi"
           :goal="sondaggiGoals.numeroSondaggi"
+          :current-value="sondaggiRaw.surveysCount"
+          :goal-value="objectiveTargetPair(objectives, 'surveys-count', sondaggiRaw.surveysCount).goalValue"
           :trend="null"
         />
         <metric-card
-          label="Utenti unici"
+          :label="t('dashboard.sondaggi.uniqueUsers')"
           :value="sondaggiCurrent.partecipanti"
           :goal="sondaggiGoals.partecipanti"
+          :current-value="sondaggiRaw.participants"
+          :goal-value="objectiveTargetPair(objectives, 'surveys-participants-count', sondaggiRaw.participants).goalValue"
           :trend="null"
         />
         <metric-card
-          label="Risposte totali"
+          :label="t('dashboard.sondaggi.totalResponses')"
           :value="sondaggiCurrent.risposteTotali"
           :goal="sondaggiGoals.risposteTotali"
+          :current-value="sondaggiRaw.totalResponses"
+          :goal-value="objectiveTargetPair(objectives, 'surveys-total-responses', sondaggiRaw.totalResponses).goalValue"
           :trend="null"
         />
         <metric-card
-          label="Engagement rate (calcolato)"
+          :label="t('dashboard.sondaggi.engagementRate')"
           :value="sondaggiCurrent.engagementRate"
           :goal="sondaggiGoals.engagementRate"
+          :current-value="sondaggiRaw.engagementRate"
+          :goal-value="objectiveTargetPair(objectives, 'sondaggi-engagement-rate', sondaggiRaw.engagementRate).goalValue"
           :trend="null"
         />
         <metric-card
-          label="Satisfaction rate structured dialogues"
+          :label="t('dashboard.sondaggi.satisfactionRate')"
           value="—"
           :goal="sondaggiGoals.satisfactionRate"
           :trend="null"
@@ -38,12 +46,12 @@
             <div
               class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
             >
-              Placeholder: score 1–5, target ≥ 4. Non calcolabile in maniera programmatica.
+              {{ t('dashboard.sondaggi.satisfactionPlaceholder') }}
             </div>
           </template>
         </metric-card>
         <metric-card
-          label="Improved understanding Regional Development"
+          :label="t('dashboard.sondaggi.regionalDevelopment')"
           value="—"
           :goal="sondaggiGoals.regionalDevelopmentUnderstanding"
           :trend="null"
@@ -52,12 +60,12 @@
             <div
               class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
             >
-              Placeholder: survey post-workshop/dialogue. Non calcolabile in maniera programmatica.
+              {{ t('dashboard.sondaggi.regionalPlaceholder') }}
             </div>
           </template>
         </metric-card>
         <metric-card
-          label="Cohesion Advocacy"
+          :label="t('dashboard.sondaggi.cohesionAdvocacy')"
           value="—"
           :goal="sondaggiGoals.cohesionAdvocacy"
           :trend="null"
@@ -66,20 +74,20 @@
             <div
               class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
             >
-              Placeholder: survey follow-up a chiusura intero progetto. Non calcolabile in maniera programmatica.
+              {{ t('dashboard.sondaggi.cohesionPlaceholder') }}
             </div>
           </template>
         </metric-card>
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
-          title="Obiettivo partecipazione"
-          description="Target risposte totali"
+          :title="t('dashboard.sondaggi.goalTitle')"
+          :description="t('dashboard.sondaggi.goalDescription')"
           :progress="Math.round(sondaggiProgressPercent)"
           :target-percent="parseInt(goals.sondaggi.targetPercent) || 100"
           :target-label="sondaggiGoals.risposteTotali"
           :current-label="sondaggiCurrent.risposteTotali"
-          :progress-text="`Hai raggiunto circa ${Math.round(sondaggiProgressPercent)}% dell'obiettivo.`"
+          :progress-text="t('dashboard.sondaggi.goalProgressText', { n: Math.round(sondaggiProgressPercent) })"
         />
       </div>
     </div>
@@ -88,8 +96,9 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGoals } from '@/composables/useGoals'
-import { useObjectives } from '@/composables/useObjectives'
+import { useObjectives, objectiveTargetPair } from '@/composables/useObjectives'
 import { useMetrics } from '@/composables/useMetrics'
 import { api, type SondaggiStats } from '@/api/client'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
@@ -98,6 +107,7 @@ import MetricCard from '@/components/dashboard/MetricCard.vue'
 import GoalProgress from '@/components/dashboard/GoalProgress.vue'
 import { formatDisplayValue } from '@/utils/metricFormat'
 
+const { t } = useI18n()
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
 const { formatMetricValue } = useMetrics()
@@ -164,6 +174,20 @@ const sondaggiCurrent = computed(() => {
     partecipanti: formatForObjective('surveys-participants-count', stats.value?.participantsCount ?? 0),
     risposteTotali: formatForObjective('surveys-total-responses', stats.value?.totalResponses ?? 0),
     engagementRate: formatDisplayValue(stats.value?.engagementRatePercent ?? 0, '%'),
+  }
+})
+
+const sondaggiRaw = computed(() => {
+  function visual(id: string, raw: number): number {
+    const unit = objectives.value.find((o) => o.id === id)?.unit ?? ''
+    return denormalizeValue(raw, unit)
+  }
+
+  return {
+    surveysCount: visual('surveys-count', stats.value?.surveysCount ?? 0),
+    participants: visual('surveys-participants-count', stats.value?.participantsCount ?? 0),
+    totalResponses: visual('surveys-total-responses', stats.value?.totalResponses ?? 0),
+    engagementRate: stats.value?.engagementRatePercent ?? 0,
   }
 })
 

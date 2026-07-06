@@ -61,6 +61,9 @@ async function getNewsletterStats(start: string, end: string): Promise<{
   sentTotal: number
   daily: {
     day: string
+    sent: number
+    open: number
+    click: number
     openRate: number
     clickRate: number
     subscribersTotal: number
@@ -130,6 +133,9 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     const dayClickRate = Math.min(dayClickRateRaw, 100)
     return {
       day,
+      sent: v.sent,
+      open: v.open,
+      click: v.click,
       openRate: Number(dayOpenRate.toFixed(1)),
       clickRate: Number(dayClickRate.toFixed(1)),
       subscribersTotal: cumulativeSubs,

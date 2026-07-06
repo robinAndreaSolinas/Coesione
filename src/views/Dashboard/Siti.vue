@@ -1,31 +1,37 @@
 <template>
   <admin-layout>
-    <page-breadcrumb page-title="Analitiche siti e carta" />
-    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Analitiche siti e carta</h1>
+    <page-breadcrumb :page-title="t('dashboard.siti.breadcrumb')" />
+    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">{{ t('dashboard.siti.title') }}</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
         <metric-card
-          label="Utenti unici articoli"
+          :label="t('dashboard.siti.uniqueUsers')"
           :value="sitiCurrent.utentiUniciArticoli.value"
           :goal="sitiGoals.utentiUniciArticoli"
+          :current-value="sitiCurrent.utentiUniciArticoli.currentVisual"
+          :goal-value="sitiCurrent.utentiUniciArticoli.goalVisual"
           :trend="null"
           :progress-percent="sitiCurrent.utentiUniciArticoli.progress"
         />
         <metric-card
-          label="Pagine viste medie per articolo"
+          :label="t('dashboard.siti.avgPageviews')"
           :value="sitiCurrent.pagineVisteArticoli.value"
           :goal="sitiGoals.pagineVisteArticoli"
+          :current-value="sitiCurrent.pagineVisteArticoli.currentVisual"
+          :goal-value="sitiCurrent.pagineVisteArticoli.goalVisual"
           :trend="null"
           :progress-percent="sitiCurrent.pagineVisteArticoli.progress"
         />
         <metric-card
-          label="Numero articoli pubblicati"
+          :label="t('dashboard.siti.publishedArticles')"
           :value="sitiCurrent.articoliPubblicati.value"
           :goal="sitiGoals.articoliPubblicati"
+          :current-value="sitiCurrent.articoliPubblicati.currentVisual"
+          :goal-value="sitiCurrent.articoliPubblicati.goalVisual"
           :trend="null"
         />
         <metric-card
-          label="Articoli Stampati"
+          :label="t('dashboard.siti.printedArticles')"
           value="—"
           :goal="sitiGoals.articoliStampati"
           :trend="null"
@@ -34,33 +40,35 @@
             <div
               class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
             >
-              Placeholder: dato non fornito al momento
+              {{ t('common.placeholder') }}
             </div>
           </template>
         </metric-card>
         <metric-card
-          label="Articoli digitali (web)"
+          :label="t('dashboard.siti.digitalArticles')"
           :value="sitiCurrent.articoliDigitali.value"
           :goal="sitiGoals.articoliDigitali"
+          :current-value="sitiCurrent.articoliDigitali.currentVisual"
+          :goal-value="sitiCurrent.articoliDigitali.goalVisual"
           :trend="null"
           :progress-percent="sitiCurrent.articoliDigitali.progress"
         />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
-          title="Obiettivo traffico"
-          description="Target pagine viste medie per articolo"
+          :title="t('dashboard.siti.goalTitle')"
+          :description="t('dashboard.siti.goalDescription')"
           :progress="Math.round(sitiCurrent.pagineVisteArticoli.progress ?? 0)"
           :target-percent="100"
           :target-label="sitiGoals.pagineVisteArticoli"
           :current-label="sitiCurrent.pagineVisteArticoli.value"
-          progress-text="Buon traffico. Continua così per raggiungere l'obiettivo."
+          :progress-text="t('dashboard.siti.goalProgressText')"
         />
       </div>
       <div class="col-span-12">
         <analytics-chart
-          title="Utenti unici mensili"
-          description="Andamento utenti unici per mese"
+          :title="t('dashboard.siti.chartTitle')"
+          :description="t('dashboard.siti.chartDescription')"
           :series="chartSeries"
           :categories="uniqueUserCategories"
         />
@@ -71,6 +79,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGoals } from '@/composables/useGoals'
 import { useObjectives } from '@/composables/useObjectives'
 import { useSiteMetrics } from '@/composables/useSiteMetrics'
@@ -80,6 +89,7 @@ import MetricCard from '@/components/dashboard/MetricCard.vue'
 import GoalProgress from '@/components/dashboard/GoalProgress.vue'
 import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
+const { t } = useI18n()
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
 const {
@@ -129,9 +139,6 @@ function denormalizeSiteValue(value: number, unit: string): number {
 }
 
 function denormalizeUniqueUsersValue(rawUugInK: number, unit: string): number {
-  // Adatta i dati in base all'unità dell'obiettivo:
-  // - unit K => migliaia
-  // - unit M => milioni
   if (unit === 'K') return rawUugInK / 1_000
   if (unit === 'M') return rawUugInK / 1_000_000
   if (unit === '%') return rawUugInK * 100
@@ -197,6 +204,8 @@ const sitiCurrent = computed(() => {
     return {
       value: formatDenormalized(currentVisual, unit),
       progress,
+      currentVisual,
+      goalVisual: goalVisual > 0 ? goalVisual : null,
     }
   }
 
@@ -216,7 +225,7 @@ const uniqueUsersUnit = computed(
 
 const chartSeries = computed(() => [
   {
-    name: 'Utenti unici',
+    name: t('dashboard.siti.chartSeries'),
     data: uniqueUsersByMonth.value.map((p) => denormalizeUniqueUsersValue(p.uug, uniqueUsersUnit.value)),
   },
 ])

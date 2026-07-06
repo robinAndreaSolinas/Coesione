@@ -5,7 +5,7 @@
         class="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900"
       >
         <div class="flex flex-col flex-1 w-full lg:w-1/2">
-          <div class="w-full max-w-md pt-10 mx-auto">
+          <div class="flex w-full max-w-md items-center justify-between gap-4 pt-10 mx-auto">
             <router-link
               to="/"
               class="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
@@ -26,8 +26,9 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              Torna alla dashboard
+              {{ t('auth.backToDashboard') }}
             </router-link>
+            <LanguageSwitcher />
           </div>
           <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
             <div>
@@ -35,10 +36,10 @@
                 <h1
                   class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md"
                 >
-                  Accedi
+                  {{ t('auth.signIn') }}
                 </h1>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Inserisci email e password per accedere.
+                  {{ t('auth.signInHint') }}
                 </p>
               </div>
               <form @submit.prevent="handleSubmit">
@@ -122,7 +123,7 @@
                       class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
                     />
                     <label for="keepLoggedIn" class="text-sm text-gray-600 dark:text-gray-400">
-                      Resta collegato
+                      {{ t('auth.rememberMe') }}
                     </label>
                   </div>
                   <p v-if="error" class="text-sm text-error-500">{{ error }}</p>
@@ -131,7 +132,7 @@
                     :disabled="loading"
                     class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50"
                   >
-                    {{ loading ? 'Accesso...' : 'Accedi' }}
+                    {{ loading ? t('auth.signingIn') : t('auth.signIn') }}
                   </button>
                 </div>
               </form>
@@ -161,11 +162,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
+import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const { t } = useI18n()
 const { login } = useAuth()
 
 const email = ref('')
@@ -183,7 +187,7 @@ async function handleSubmit() {
     const redirect = (router.currentRoute.value.query.redirect as string) || '/'
     router.push(redirect)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Credenziali non valide'
+    error.value = e instanceof Error ? e.message : t('auth.invalidCredentials')
   } finally {
     loading.value = false
   }

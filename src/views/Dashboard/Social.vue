@@ -1,45 +1,49 @@
 <template>
   <admin-layout>
-    <page-breadcrumb page-title="Analitiche Social" />
-    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Social</h1>
+    <page-breadcrumb :page-title="t('dashboard.social.breadcrumb')" />
+    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">{{ t('dashboard.social.title') }}</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
         <metric-card
-          label="Engagement rate (calcolato)"
+          :label="t('dashboard.social.engagementRate')"
           :value="socialCurrent.engagementRate"
           :goal="socialGoals.engagementRate"
+          :current-value="engagementRateTotalPercent"
+          :goal-value="objectiveTargetPair(objectives, 'social-engagement-rate', engagementRateTotalPercent).goalValue"
           :trend="null"
         />
         <metric-card
-          label="Interazioni"
+          :label="t('dashboard.social.interactions')"
           :value="interactionsLabel"
           :trend="null"
         />
         <metric-card
-          label="Reach"
+          :label="t('dashboard.social.reach')"
           :value="socialCurrent.reach"
           :trend="null"
         />
         <metric-card
-          label="Numero post"
+          :label="t('dashboard.social.postsCount')"
           :value="socialCurrent.posts"
           :goal="socialGoals.postsCount"
+          :current-value="postsCount"
+          :goal-value="objectiveTargetPair(objectives, 'social-posts-count', postsCount).goalValue"
           :trend="null"
         />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
-          title="Obiettivo engagement rate"
-          description="Target mensile engagement rate sui canali social"
+          :title="t('dashboard.social.goalTitle')"
+          :description="t('dashboard.social.goalDescription')"
           :progress="Math.round(socialProgressPercent)"
           :target-percent="100"
           :target-label="socialGoals.engagementRate"
           :current-label="socialCurrent.engagementRateRawLabel"
-          progress-text="Ottimo engagement rate! Raggiungerai l'obiettivo a fine mese."
+          :progress-text="t('dashboard.social.goalProgressText')"
         />
       </div>
       <div class="col-span-12">
-        <h2 class="mb-3 text-lg font-semibold text-gray-800 dark:text-white/90">Split per social</h2>
+        <h2 class="mb-3 text-lg font-semibold text-gray-800 dark:text-white/90">{{ t('dashboard.social.splitTitle') }}</h2>
         <div class="grid gap-4 md:grid-cols-2">
           <div
             v-for="platform in platformCards"
@@ -61,6 +65,8 @@
                 :label="metric.label"
                 :value="metric.value"
                 :goal="metric.goal"
+                :current-value="metric.currentValue"
+                :goal-value="metric.goalValue"
                 :trend="null"
               />
             </div>
@@ -73,8 +79,9 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGoals } from '@/composables/useGoals'
-import { useObjectives } from '@/composables/useObjectives'
+import { useObjectives, objectiveTargetPair } from '@/composables/useObjectives'
 import { useMetrics } from '@/composables/useMetrics'
 import { useSocialSummary } from '@/composables/useSocialSummary'
 import { api, type SocialPlatformsData } from '@/api/client'
@@ -86,6 +93,7 @@ import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 import { formatDisplayValue } from '@/utils/metricFormat'
 
+const { t } = useI18n()
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
 const { formatMetricValue } = useMetrics()
@@ -186,11 +194,11 @@ const socialProgressPercent = computed(() => {
 })
 
 const chartSeries = computed(() => [
-  { name: 'Interazioni', data: [denormalizeForDisplay(interactionsTotal.value, 'K')] },
+  { name: t('dashboard.social.chartInteractions'), data: [denormalizeForDisplay(interactionsTotal.value, 'K')] },
 ])
 
 const engagementSeries = computed(() => [
-  { name: 'Engagement rate %', data: [engagementRateTotalPercent.value] },
+  { name: t('dashboard.social.chartEngagementRate'), data: [engagementRateTotalPercent.value] },
 ])
 
 function platformGoalFor(id: string, fallbackValue: number, fallbackUnit: string): { value: number; unit: string } {
@@ -242,24 +250,55 @@ const platformCards = computed(() => {
     const icon = iconByKey[r.key]
 
     const postsOnly = POSTS_ONLY_PLATFORMS.has(r.key)
-    const reachValue = formatCompact(denormalizeForDisplay(r.data?.reach ?? 0, cfg.reachUnit), cfg.reachUnit)
-    const erValue = formatCompact(denormalizeForDisplay(r.data?.engagementRatePercent ?? 0, cfg.erUnit), cfg.erUnit)
-    const postsValue = formatCompact(denormalizeForDisplay(r.data?.postsCount ?? 0, cfg.postsUnit), cfg.postsUnit)
+    const reachCurrent = denormalizeForDisplay(r.data?.reach ?? 0, cfg.reachUnit)
+    const erCurrent = denormalizeForDisplay(r.data?.engagementRatePercent ?? 0, cfg.erUnit)
+    const postsCurrent = denormalizeForDisplay(r.data?.postsCount ?? 0, cfg.postsUnit)
+    const reachValue = formatCompact(reachCurrent, cfg.reachUnit)
+    const erValue = formatCompact(erCurrent, cfg.erUnit)
+    const postsValue = formatCompact(postsCurrent, cfg.postsUnit)
     const postsGoal = formatCompact(cfg.posts, cfg.postsUnit)
     const erGoal = formatCompact(cfg.er, cfg.erUnit)
     const reachGoal = formatCompact(cfg.reach, cfg.reachUnit)
 
     const metrics = postsOnly
-      ? [{ key: 'posts', label: 'Contenuti pubblicati', value: postsValue, goal: postsGoal }]
+      ? [
+          {
+            key: 'posts',
+            label: t('dashboard.social.publishedContent'),
+            value: postsValue,
+            goal: postsGoal,
+            currentValue: postsCurrent,
+            goalValue: cfg.posts,
+          },
+        ]
       : [
           {
             key: 'reach',
-            label: r.key === 'instagram' || r.key === 'tiktok' ? 'Reach media' : 'Reach',
+            label:
+              r.key === 'instagram' || r.key === 'tiktok'
+                ? t('dashboard.social.avgReach')
+                : t('dashboard.social.reach'),
             value: reachValue,
             goal: reachGoal,
+            currentValue: reachCurrent,
+            goalValue: cfg.reach,
           },
-          { key: 'er', label: 'Engagement rate', value: erValue, goal: erGoal },
-          { key: 'posts', label: 'Numero post', value: postsValue, goal: postsGoal },
+          {
+            key: 'er',
+            label: t('dashboard.social.engagementRateShort'),
+            value: erValue,
+            goal: erGoal,
+            currentValue: erCurrent,
+            goalValue: cfg.er,
+          },
+          {
+            key: 'posts',
+            label: t('dashboard.social.postsCount'),
+            value: postsValue,
+            goal: postsGoal,
+            currentValue: postsCurrent,
+            goalValue: cfg.posts,
+          },
         ]
 
     return {

@@ -1,46 +1,50 @@
 <template>
   <admin-layout>
-    <page-breadcrumb page-title="Analitiche Video" />
-    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Video</h1>
+    <page-breadcrumb :page-title="t('dashboard.video.breadcrumb')" />
+    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">{{ t('dashboard.video.title') }}</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
         <metric-card
-          label="Numero video"
+          :label="t('dashboard.video.videoCount')"
           :value="audiovisualLabel"
           :goal="videoGoals.audiovisualCount"
+          :current-value="audiovisualCountValue"
+          :goal-value="objectiveTargetPair(objectives, 'video-audiovisual-count', audiovisualCountValue).goalValue"
         />
         <metric-card
-          label="Stream"
+          :label="t('dashboard.video.stream')"
           :value="audienceLabel"
           :goal="videoGoals.audience"
+          :current-value="audienceValue"
+          :goal-value="objectiveTargetPair(objectives, 'video-audience', audienceValue).goalValue"
         />
         <metric-card
-          label="Minuti guardati"
+          :label="t('dashboard.video.minutesWatched')"
           :value="minutesLabel"
         />
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
-          title="Obiettivo stream"
-          description="Target visualizzazioni video"
+          :title="t('dashboard.video.goalTitle')"
+          :description="t('dashboard.video.goalDescription')"
           :progress="videoProgress"
           :target-percent="100"
           :target-label="videoGoals.audience"
           :current-label="audienceLabel"
-          :progress-text="`Hai raggiunto circa ${videoProgress}% dell'obiettivo.`"
+          :progress-text="t('dashboard.video.goalProgressText', { n: videoProgress })"
         />
       </div>
       <div class="col-span-12 xl:col-span-5">
         <analytics-chart
-          title="Visualizzazioni giornaliere"
+          :title="t('dashboard.video.chartDaily')"
           :series="chartSeries"
           :categories="chartCategories"
         />
       </div>
       <div class="col-span-12">
         <analytics-chart
-          title="Performance video"
-          description="Stream e minuti guardati"
+          :title="t('dashboard.video.chartPerformance')"
+          :description="t('dashboard.video.chartPerformanceDescription')"
           :series="performanceSeries"
           :categories="chartCategories"
         />
@@ -51,8 +55,9 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGoals } from '@/composables/useGoals'
-import { useObjectives } from '@/composables/useObjectives'
+import { useObjectives, objectiveTargetPair } from '@/composables/useObjectives'
 import { useMetrics } from '@/composables/useMetrics'
 import { api, type VideoStats } from '@/api/client'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
@@ -61,6 +66,7 @@ import MetricCard from '@/components/dashboard/MetricCard.vue'
 import GoalProgress from '@/components/dashboard/GoalProgress.vue'
 import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
+const { t } = useI18n()
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
 const { formatMetricValue } = useMetrics()
@@ -171,18 +177,18 @@ const chartCategories = computed(() => monthlyBuckets.value.map((m) => m.month))
 
 const chartSeries = computed(() => [
   {
-    name: 'Stream',
+    name: t('dashboard.video.stream'),
     data: monthlyBuckets.value.map((m) => m.stream),
   },
 ])
 
 const performanceSeries = computed(() => [
   {
-    name: 'Stream',
+    name: t('dashboard.video.stream'),
     data: monthlyBuckets.value.map((m) => m.stream),
   },
   {
-    name: 'Minuti guardati',
+    name: t('dashboard.video.seriesMinutesWatched'),
     data: monthlyBuckets.value.map((m) => m.watchedMinutes),
   },
 ])

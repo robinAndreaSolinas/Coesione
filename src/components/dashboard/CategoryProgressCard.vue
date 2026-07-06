@@ -14,18 +14,21 @@
       />
     </div>
     <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-      {{ value }}% dell'obiettivo raggiunto
+      {{ t('common.percentOfGoalReached', { n: value }) }}
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import VueApexCharts from 'vue3-apexcharts'
 
 defineProps<{
   label: string
   value: number
 }>()
+
+const { t } = useI18n()
 
 const chartOptions = {
   chart: { sparkline: { enabled: true } },

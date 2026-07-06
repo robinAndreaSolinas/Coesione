@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import i18n from '@/i18n'
 
 const DASHBOARD_PAGES: Record<string, string> = {
   '/': 'Totale',
@@ -19,55 +20,55 @@ const router = createRouter({
       path: '/',
       name: 'Totale',
       component: () => import('../views/Dashboard/Totale.vue'),
-      meta: { title: 'Totale' },
+      meta: { titleKey: 'routes.totale' },
     },
     {
       path: '/social',
       name: 'Social',
       component: () => import('../views/Dashboard/Social.vue'),
-      meta: { title: 'Analitiche Social' },
+      meta: { titleKey: 'routes.social' },
     },
     {
       path: '/video',
       name: 'Video',
       component: () => import('../views/Dashboard/Video.vue'),
-      meta: { title: 'Analitiche Video' },
+      meta: { titleKey: 'routes.video' },
     },
     {
       path: '/newsletter',
       name: 'Newsletter',
       component: () => import('../views/Dashboard/Newsletter.vue'),
-      meta: { title: 'Analitiche Newsletter' },
+      meta: { titleKey: 'routes.newsletter' },
     },
     {
       path: '/siti',
       name: 'Siti',
       component: () => import('../views/Dashboard/Siti.vue'),
-      meta: { title: 'Analitiche siti e carta' },
+      meta: { titleKey: 'routes.siti' },
     },
     {
       path: '/sondaggi',
       name: 'Sondaggi',
       component: () => import('../views/Dashboard/Sondaggi.vue'),
-      meta: { title: 'Analitiche Sondaggi + Webinar' },
+      meta: { titleKey: 'routes.sondaggi' },
     },
     {
       path: '/admin/goals',
       name: 'GoalsAdmin',
       component: () => import('../views/Admin/GoalsAdmin.vue'),
-      meta: { title: 'Gestione Obiettivi', requiresEditorOrAdmin: true },
+      meta: { titleKey: 'routes.goalsAdmin', requiresEditorOrAdmin: true },
     },
     {
       path: '/admin/users',
       name: 'UsersAdmin',
       component: () => import('../views/Admin/UsersAdmin.vue'),
-      meta: { title: 'Gestione utenti' },
+      meta: { titleKey: 'routes.usersAdmin' },
     },
     {
       path: '/admin/api-management',
       name: 'ApiManagement',
       component: () => import('../views/Admin/ApiManagement.vue'),
-      meta: { title: 'API Management', requiresAdmin: true },
+      meta: { titleKey: 'routes.apiManagement', requiresAdmin: true },
     },
     {
       path: '/calendar',
@@ -193,7 +194,9 @@ const router = createRouter({
 export default router
 
 router.beforeEach(async (to, _from, next) => {
-  document.title = `${to.meta.title || 'Dashboard'} | Cohesion Analytics`
+  const titleKey = (to.meta.titleKey as string | undefined) ?? (to.meta.title as string | undefined)
+  const pageTitle = titleKey ? i18n.global.t(titleKey) : i18n.global.t('routes.dashboard')
+  document.title = `${pageTitle} | Cohesion Analytics`
   const token = localStorage.getItem('coesione-token')
 
   if (to.path === '/signin') {

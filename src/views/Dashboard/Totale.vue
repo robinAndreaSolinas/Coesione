@@ -1,10 +1,10 @@
 <template>
   <admin-layout>
-    <page-breadcrumb page-title="Totale" />
+    <page-breadcrumb :page-title="t('routes.totale')" />
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-800 dark:text-white/90">Obiettivi</h1>
+      <h1 class="text-2xl font-bold text-gray-800 dark:text-white/90">{{ t('dashboard.totale.title') }}</h1>
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Clicca su una card per vedere i dettagli della categoria
+        {{ t('dashboard.totale.subtitle') }}
       </p>
     </div>
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-5">
@@ -14,9 +14,11 @@
         :objective="obj"
         :current-label="metricByKeyObj[obj.id]?.currentLabel"
         :target-label="metricByKeyObj[obj.id]?.goalLabel"
-        :subtitle="obj.id === 'newsletter-subscribers-active' ? 'ad oggi' : undefined"
+        :subtitle="obj.id === 'newsletter-subscribers-active' ? t('common.asOfToday') : undefined"
         :hide-target="obj.id === 'newsletter-subscribers-active'"
         :disable-link="obj.category === 'totale'"
+        :current-value="metricByKeyObj[obj.id]?.current"
+        :goal-value="metricByKeyObj[obj.id]?.goal"
       />
     </div>
     <div class="mt-8 space-y-6">
@@ -24,10 +26,10 @@
         class="rounded-2xl border border-gray-200 bg-white px-5 pb-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6"
       >
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-          Raggiungimento complessivo obiettivi
+          {{ t('dashboard.totale.overallTitle') }}
         </h3>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Goal raggiunti vs non raggiunti su tutte le sezioni
+          {{ t('dashboard.totale.overallDescription') }}
         </p>
         <div class="mt-6">
           <VueApexCharts
@@ -42,20 +44,20 @@
         <div class="mt-4 flex flex-wrap items-center justify-center gap-4">
           <div class="flex items-center justify-center gap-2 text-sm text-gray-800 dark:text-white/90 text-center">
             <span class="h-2.5 w-2.5 rounded-full bg-green-600"></span>
-            <span>Raggiunti: {{ overallReachedPercent }}% ({{ overallReachedGoals }})</span>
+            <span>{{ t('common.reachedLegend', { percent: overallReachedPercent, count: overallReachedGoals }) }}</span>
           </div>
           <div class="flex items-center justify-center gap-2 text-sm text-gray-800 dark:text-white/90 text-center">
             <span class="h-2.5 w-2.5 rounded-full bg-red-600"></span>
-            <span>Non raggiunti: {{ overallNotReachedPercent }}% ({{ overallNotReachedGoals }})</span>
+            <span>{{ t('common.notReachedLegend', { percent: overallNotReachedPercent, count: overallNotReachedGoals }) }}</span>
           </div>
         </div>
       </div>
       <div>
         <h2 class="text-base font-semibold text-gray-800 dark:text-white/90">
-          Dettaglio per categoria
+          {{ t('dashboard.totale.categoryDetailTitle') }}
         </h2>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Ogni cerchio mostra il progresso della singola area rispetto al proprio target
+          {{ t('dashboard.totale.categoryDetailDescription') }}
         </p>
         <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <category-progress-card
@@ -72,6 +74,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useObjectives } from '@/composables/useObjectives'
 import { useCategoryProgress } from '@/composables/useCategoryProgress'
 import { useMetrics } from '@/composables/useMetrics'
@@ -82,6 +85,7 @@ import ObjectiveCard from '@/components/dashboard/ObjectiveCard.vue'
 import CategoryProgressCard from '@/components/dashboard/CategoryProgressCard.vue'
 import { isVisibleOnTotale, countsTowardTotaleProgress } from '@/utils/totaleObjectives'
 
+const { t } = useI18n()
 const { objectives } = useObjectives()
 const { progressByCategory } = useCategoryProgress()
 const { metricsForView } = useMetrics()
@@ -133,7 +137,7 @@ const overallNotReachedPercent = computed(() => {
 
 const overallPieOptions = computed(() => ({
   chart: { id: 'overall-goals-pie', fontFamily: 'Outfit, sans-serif', toolbar: { show: false } },
-  labels: ['Raggiunti', 'Non raggiunti'],
+  labels: [t('common.reached'), t('common.notReached')],
   colors: ['#16A34A', '#DC2626'],
   fill: {
     colors: ['#16A34A', '#DC2626'],

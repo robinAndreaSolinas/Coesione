@@ -74,14 +74,14 @@
         class="items-center justify-between w-full gap-4 px-5 py-4 shadow-theme-md lg:flex lg:justify-end lg:px-0 lg:shadow-none"
       >
         <div class="flex items-center gap-2 2xsm:gap-3">
-          <PdfDownloadButton v-if="isAuthenticated" />
+          <LanguageSwitcher />
           <ThemeToggler />
           <router-link
             v-if="!isAuthenticated"
             to="/signin"
             class="inline-flex items-center justify-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
           >
-            Login
+            {{ t('common.login') }}
           </router-link>
           <UserMenu v-else />
         </div>
@@ -95,9 +95,12 @@ import { ref } from 'vue'
 import { useSidebar } from '@/composables/useSidebar'
 import { useAuth } from '@/composables/useAuth'
 import ThemeToggler from '../common/ThemeToggler.vue'
-import PdfDownloadButton from '../common/PdfDownloadButton.vue'
+import LanguageSwitcher from '../common/LanguageSwitcher.vue'
 import HeaderLogo from './header/HeaderLogo.vue'
 import UserMenu from './header/UserMenu.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const { toggleSidebar, toggleMobileSidebar, isMobileOpen } = useSidebar()
 const { isAuthenticated } = useAuth()

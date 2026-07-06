@@ -26,9 +26,12 @@
         </span>
         <div class="mt-2 flex items-start justify-between gap-4">
           <div class="min-w-0">
-            <h3 class="line-clamp-2 text-sm font-semibold leading-snug text-gray-800 dark:text-white/90">
-              {{ objective.title }}
-            </h3>
+            <div class="flex items-start gap-2">
+              <target-status-indicator :status="targetStatusComputed" />
+              <h3 class="line-clamp-2 text-sm font-semibold leading-snug text-gray-800 dark:text-white/90">
+                {{ titleFor(objective.id, objective.title) }}
+              </h3>
+            </div>
             <p
               v-if="subtitle"
               class="mt-0.5 text-xs text-gray-500 dark:text-gray-400"
@@ -38,7 +41,7 @@
           </div>
           <div class="shrink-0 text-right">
             <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              {{ hideTarget ? 'Valore' : 'Valore / Target' }}
+              {{ hideTarget ? t('common.value') : t('common.valueTarget') }}
             </div>
             <div class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90">
               <template v-if="hideTarget">{{ currentLabelComputed }}</template>
@@ -62,9 +65,15 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Objective } from '@/composables/useObjectives'
-
+import { useObjectiveTitle } from '@/composables/useObjectiveTitle'
+import TargetStatusIndicator from '@/components/dashboard/TargetStatusIndicator.vue'
 import { formatDisplayValue } from '@/utils/metricFormat'
+import { targetStatusFromValues } from '@/utils/targetStatus'
+
+const { t } = useI18n()
+const { titleFor } = useObjectiveTitle()
 
 const props = defineProps<{
   objective: Objective
@@ -73,22 +82,18 @@ const props = defineProps<{
   subtitle?: string | null
   hideTarget?: boolean
   disableLink?: boolean
+  currentValue?: number | null
+  goalValue?: number | null
 }>()
 
 function formatGoal(value: number, unit: string): string {
   return formatDisplayValue(value, unit)
 }
 
-const categoryLabels: Record<string, string> = {
-  totale: 'Totale',
-  social: 'Social',
-  video: 'Video',
-  newsletter: 'Newsletter',
-  siti: 'Siti',
-  sondaggi: 'Sondaggi + Webinar',
-}
-
-const categoryLabel = computed(() => categoryLabels[props.objective.category] ?? props.objective.category)
+const categoryLabel = computed(() => {
+  const key = `categories.${props.objective.category}`
+  return t(key)
+})
 
 const iconBgClass = computed(() => {
   const classes: Record<string, string> = {
@@ -139,6 +144,12 @@ const iconPaths: Record<string, string> = {
 const iconSvg = computed(() => iconPaths[props.objective.category] ?? iconPaths.social)
 
 const currentLabelComputed = computed(() => props.currentLabel ?? '0')
+
+const targetStatusComputed = computed(() => {
+  if (props.hideTarget) return null
+  return targetStatusFromValues(props.currentValue, props.goalValue)
+})
+
 const targetLabelComputed = computed(
   () => props.targetLabel ?? (props.objective.value != null ? formatGoal(props.objective.value, props.objective.unit) : '0'),
 )

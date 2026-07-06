@@ -23,12 +23,16 @@
         <span
           :class="[
             'inline-flex rounded-full px-3 py-1 text-xs font-medium',
-            progress >= targetPercent
+            progress >= (targetPercent ?? 100)
               ? 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500'
               : 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-500',
           ]"
         >
-          {{ progress >= targetPercent ? 'Obiettivo raggiunto' : `${targetPercent - progress}% mancanti` }}
+          {{
+            progress >= (targetPercent ?? 100)
+              ? t('common.goalReached')
+              : t('common.percentMissing', { n: (targetPercent ?? 100) - progress })
+          }}
         </span>
       </div>
       <p class="mx-auto mt-1.5 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base">
@@ -38,7 +42,7 @@
     <div class="flex items-center justify-center gap-5 px-6 py-3.5 sm:gap-8 sm:py-5">
       <div>
         <p class="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-          Obiettivo
+          {{ t('common.target') }}
         </p>
         <p class="text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
           {{ targetLabel }}
@@ -47,7 +51,7 @@
       <div class="w-px bg-gray-200 h-7 dark:bg-gray-800"></div>
       <div>
         <p class="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-          Attuale
+          {{ t('common.current') }}
         </p>
         <p class="text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
           {{ currentLabel }}
@@ -58,9 +62,11 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import VueApexCharts from 'vue3-apexcharts'
 
-defineProps<{
+const props = defineProps<{
   title: string
   description: string
   progress: number
@@ -70,7 +76,9 @@ defineProps<{
   progressText: string
 }>()
 
-const chartOptions = {
+const { t } = useI18n()
+
+const chartOptions = computed(() => ({
   colors: ['#465FFF'],
   chart: { fontFamily: 'Outfit, sans-serif', sparkline: { enabled: true } },
   plotOptions: {
@@ -93,8 +101,8 @@ const chartOptions = {
   },
   fill: { type: 'solid', colors: ['#465FFF'] },
   stroke: { lineCap: 'round' as const },
-  labels: ['Progresso'],
-}
+  labels: [t('common.progress')],
+}))
 </script>
 
 <style scoped>

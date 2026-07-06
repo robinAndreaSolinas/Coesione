@@ -1,18 +1,11 @@
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useMetrics } from './useMetrics'
 
 import { isVisibleOnTotale, countsTowardTotaleProgress } from '@/utils/totaleObjectives'
 
-const CATEGORY_LABELS: Record<string, string> = {
-  totale: 'Totale',
-  social: 'Social',
-  video: 'Video',
-  newsletter: 'Newsletter',
-  siti: 'Siti',
-  sondaggi: 'Sondaggi + Webinar',
-}
-
 export function useCategoryProgress() {
+  const { t } = useI18n()
   const { metrics } = useMetrics()
 
   const progressByCategory = computed(() => {
@@ -26,7 +19,7 @@ export function useCategoryProgress() {
       const value = totalGoals > 0 ? Math.round((reachedGoals / totalGoals) * 100) : 0
       return {
         category: cat,
-        label: CATEGORY_LABELS[cat],
+        label: t(`categories.${cat}`),
         value,
       }
     })

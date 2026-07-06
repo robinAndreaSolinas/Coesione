@@ -31,12 +31,18 @@ const props = defineProps<{
   description?: string
   series: { name: string; data: number[] }[]
   categories?: string[]
+  yAxisFormat?: 'number' | 'percent'
 }>()
 
 const series = computed(() => props.series)
 
+function formatAxisValue(val: number): string {
+  const rounded = Math.round(val * 10) / 10
+  return props.yAxisFormat === 'percent' ? `${rounded}%` : String(rounded)
+}
+
 const chartOptions = computed(() => ({
-  legend: { show: false },
+  legend: { show: props.yAxisFormat === 'percent', position: 'top' as const },
   colors: ['#465FFF', '#9CB9FF'],
   chart: {
     fontFamily: 'Outfit, sans-serif',
@@ -55,6 +61,11 @@ const chartOptions = computed(() => ({
     padding: { left: 10, right: 10, top: 10, bottom: 10 },
   },
   dataLabels: { enabled: false },
+  tooltip: {
+    y: {
+      formatter: (val: number) => formatAxisValue(val),
+    },
+  },
   xaxis: {
     type: 'category',
     categories: props.categories ?? ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'],
@@ -62,6 +73,11 @@ const chartOptions = computed(() => ({
     axisTicks: { show: false },
   },
   yaxis: {
+    min: props.yAxisFormat === 'percent' ? 0 : undefined,
+    max: props.yAxisFormat === 'percent' ? 100 : undefined,
+    labels: {
+      formatter: (val: number) => formatAxisValue(val),
+    },
     title: { style: { fontSize: '0px' } },
   },
 }))

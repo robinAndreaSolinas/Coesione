@@ -42,6 +42,9 @@ export interface NewsletterMetrics {
 
 export interface NewsletterDailyPoint {
   day: string
+  sent: number
+  open: number
+  click: number
   openRate: number
   clickRate: number
   subscribersTotal: number

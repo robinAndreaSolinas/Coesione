@@ -1,6 +1,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { api, type ApiMetricSummary } from '@/api/client'
 import { formatDisplayValue } from '@/utils/metricFormat'
+import { useObjectiveTitle } from './useObjectiveTitle'
 
 export type MetricCategory = 'social' | 'video' | 'newsletter' | 'siti' | 'sondaggi'
 
@@ -41,6 +42,8 @@ function formatMetricValue(value: number, unit: string): string {
 }
 
 export function useMetrics() {
+  const { titleFor } = useObjectiveTitle()
+
   async function loadMetrics() {
     try {
       const rows = await api.metrics.summary()
@@ -83,6 +86,7 @@ export function useMetrics() {
         m.goal > 0 ? Math.round((m.current / m.goal) * 100) : 0
       return {
         ...m,
+        title: titleFor(m.key, m.title),
         progress,
         currentLabel: formatMetricValue(m.current, m.unit),
         goalLabel: formatMetricValue(m.goal, m.unit),

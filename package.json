@@ -34,6 +34,7 @@
     "swiper": "^11.2.1",
     "vue": "^3.5.13",
     "vue-flatpickr-component": "^11.0.5",
+    "vue-i18n": "^9.14.5",
     "vue-kanban": "^1.8.0",
     "vue-router": "^4.5.0",
     "vue3-apexcharts": "^1.8.0",

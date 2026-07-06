@@ -5,10 +5,22 @@ import { roundMetricDisplay, formatDisplayValue } from '@/utils/metricFormat'
 export interface Objective {
   id: string
   title: string
-  category: 'social' | 'video' | 'newsletter' | 'siti' | 'sondaggi'
+  category: 'social' | 'video' | 'newsletter' | 'siti' | 'sondaggi' | 'totale'
   path: string
   value: number
   unit: string
+}
+
+export function objectiveTargetPair(
+  objectiveList: Objective[],
+  id: string,
+  currentVisual: number,
+): { currentValue: number | null; goalValue: number | null } {
+  const obj = objectiveList.find((o) => o.id === id)
+  if (!obj || obj.value <= 0) {
+    return { currentValue: null, goalValue: null }
+  }
+  return { currentValue: currentVisual, goalValue: obj.value }
 }
 
 const objectives = ref<Objective[]>([])

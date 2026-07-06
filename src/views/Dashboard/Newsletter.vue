@@ -1,34 +1,40 @@
 <template>
   <admin-layout>
-    <page-breadcrumb page-title="Analitiche Newsletter" />
-    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">Newsletter</h1>
+    <page-breadcrumb :page-title="t('dashboard.newsletter.breadcrumb')" />
+    <h1 class="mb-6 text-2xl font-bold text-gray-800 dark:text-white/90">{{ t('dashboard.newsletter.title') }}</h1>
     <div class="grid grid-cols-12 gap-4 md:gap-6">
       <div class="col-span-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 md:gap-6">
         <metric-card
-          label="Open rate (calcolato)"
+          :label="t('dashboard.newsletter.openRate')"
           :value="openRateDisplay"
           :goal="newsletterGoals.openRate"
+          :current-value="openRateVisual"
+          :goal-value="objectiveTargetPair(objectives, 'newsletter-open-rate', openRateVisual).goalValue"
           :trend="null"
         />
         <metric-card
-          label="Click rate (calcolato)"
+          :label="t('dashboard.newsletter.clickRate')"
           :value="clickRateDisplay"
           :goal="newsletterGoals.clickRate"
+          :current-value="clickRateVisual"
+          :goal-value="objectiveTargetPair(objectives, 'newsletter-click-rate', clickRateVisual).goalValue"
           :trend="null"
         />
         <metric-card
-          label="Policy briefs e newsletter distribuiti"
+          :label="t('dashboard.newsletter.sent')"
           :value="sentTotalDisplay"
           :goal="newsletterGoals.invii"
+          :current-value="sentTotalVisual"
+          :goal-value="objectiveTargetPair(objectives, 'newsletter-sent', sentTotalVisual).goalValue"
           :trend="null"
         />
         <metric-card
-          label="Destinatari"
+          :label="t('dashboard.newsletter.recipients')"
           :value="destinatariDisplay"
           :trend="null"
         />
         <metric-card
-          label="Feedback positivo (qualitativo)"
+          :label="t('dashboard.newsletter.feedbackPositive')"
           value="—"
           :goal="newsletterGoals.feedbackPositive"
           :trend="null"
@@ -37,35 +43,36 @@
             <div
               class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
             >
-              Placeholder: non calcolabile in maniera programmatica
+              {{ t('common.placeholderNotProgrammatic') }}
             </div>
           </template>
         </metric-card>
       </div>
       <div class="col-span-12 xl:col-span-7">
         <goal-progress
-          title="Obiettivo open rate"
-          description="Target trimestrale open rate"
+          :title="t('dashboard.newsletter.goalTitle')"
+          :description="t('dashboard.newsletter.goalDescription')"
           :progress="Math.round(openRateProgressPercent)"
           :target-percent="100"
           :target-label="newsletterGoals.openRate"
           :current-label="openRateDisplay"
-          progress-text="Monitora l'open rate per valutare l'efficacia delle campagne."
+          :progress-text="t('dashboard.newsletter.goalProgressText')"
         />
       </div>
       <div class="col-span-12 xl:col-span-5">
         <analytics-chart
-          title="Crescita iscritti"
+          :title="t('dashboard.newsletter.chartSubscribers')"
           :series="chartSeries"
           :categories="monthCategories"
         />
       </div>
       <div class="col-span-12">
         <analytics-chart
-          title="Performance invii"
-          description="Open rate e click rate per mese"
+          :title="t('dashboard.newsletter.chartPerformance')"
+          :description="t('dashboard.newsletter.chartPerformanceDescription')"
           :series="performanceSeries"
           :categories="monthCategories"
+          y-axis-format="percent"
         />
       </div>
     </div>
@@ -74,8 +81,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGoals } from '@/composables/useGoals'
-import { useObjectives } from '@/composables/useObjectives'
+import { useObjectives, objectiveTargetPair } from '@/composables/useObjectives'
 import { useNewsletter } from '@/composables/useNewsletter'
 import { useNewsletterDaily } from '@/composables/useNewsletterDaily'
 import { useMetrics } from '@/composables/useMetrics'
@@ -85,6 +93,7 @@ import MetricCard from '@/components/dashboard/MetricCard.vue'
 import GoalProgress from '@/components/dashboard/GoalProgress.vue'
 import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
+const { t } = useI18n()
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
 const { metrics, formatPercent } = useNewsletter()
@@ -106,12 +115,8 @@ function formatByObjectiveUnit(raw: number, id: string): string {
 
 const openRateDisplay = computed(() => formatPercent(metrics.value.openRate))
 const clickRateDisplay = computed(() => formatPercent(metrics.value.clickRate))
-const destinatariDisplay = computed(() =>
-  formatByObjectiveUnit(metrics.value.subscribersActive, 'newsletter-subscribers-active'),
-)
-const sentTotalDisplay = computed(() =>
-  formatByObjectiveUnit(metrics.value.sentTotal, 'newsletter-sent'),
-)
+const openRateVisual = computed(() => metrics.value.openRate)
+const clickRateVisual = computed(() => metrics.value.clickRate)
 
 const newsletterObjectivesById = computed(
   () =>
@@ -120,6 +125,17 @@ const newsletterObjectivesById = computed(
         .filter((o) => o.category === 'newsletter')
         .map((o) => [o.id, o])
     )
+)
+
+const sentTotalVisual = computed(() => {
+  const obj = newsletterObjectivesById.value.get('newsletter-sent')
+  return denormalizeForUnit(metrics.value.sentTotal, obj?.unit ?? '')
+})
+const destinatariDisplay = computed(() =>
+  formatByObjectiveUnit(metrics.value.subscribersActive, 'newsletter-subscribers-active'),
+)
+const sentTotalDisplay = computed(() =>
+  formatByObjectiveUnit(metrics.value.sentTotal, 'newsletter-sent'),
 )
 
 const newsletterGoals = computed(() => {
@@ -140,7 +156,7 @@ const newsletterGoals = computed(() => {
 const openRateProgressPercent = computed(() => {
   const obj = newsletterObjectivesById.value.get('newsletter-open-rate')
   if (!obj || obj.value <= 0) return 0
-  const current = metrics.value.openRate * 100
+  const current = metrics.value.openRate
   const val = (current / obj.value) * 100
   if (!Number.isFinite(val) || val < 0) return 0
   return Math.min(val, 999)
@@ -149,46 +165,49 @@ const openRateProgressPercent = computed(() => {
 const monthlyBuckets = computed(() => {
   const byMonth = new Map<
     string,
-    { openSum: number; clickSum: number; count: number; lastSubs: number }
+    { sent: number; open: number; click: number; lastSubs: number }
   >()
 
   dailyPoints.value.forEach((p) => {
     const month = p.day.slice(0, 7)
-    const bucket =
-      byMonth.get(month) ?? { openSum: 0, clickSum: 0, count: 0, lastSubs: 0 }
-    bucket.openSum += p.openRate
-    bucket.clickSum += p.clickRate
-    bucket.count += 1
+    const bucket = byMonth.get(month) ?? { sent: 0, open: 0, click: 0, lastSubs: 0 }
+    bucket.sent += p.sent ?? 0
+    bucket.open += p.open ?? 0
+    bucket.click += p.click ?? 0
     bucket.lastSubs = p.subscribersTotal
     byMonth.set(month, bucket)
   })
 
   return Array.from(byMonth.entries())
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([month, b]) => ({
-      month,
-      openRate: b.count ? Number((b.openSum / b.count).toFixed(2)) : 0,
-      clickRate: b.count ? Number((b.clickSum / b.count).toFixed(2)) : 0,
-      subscribersTotal: b.lastSubs,
-    }))
+    .map(([month, b]) => {
+      const openRateRaw = b.sent > 0 ? (b.open / b.sent) * 100 : 0
+      const clickRateRaw = b.sent > 0 ? (b.click / b.sent) * 100 : 0
+      return {
+        month,
+        openRate: Number(Math.min(openRateRaw, 100).toFixed(2)),
+        clickRate: Number(Math.min(clickRateRaw, 100).toFixed(2)),
+        subscribersTotal: b.lastSubs,
+      }
+    })
 })
 
 const monthCategories = computed(() => monthlyBuckets.value.map((m) => m.month))
 
 const chartSeries = computed(() => [
   {
-    name: 'Iscritti',
+    name: t('dashboard.newsletter.seriesSubscribers'),
     data: monthlyBuckets.value.map((m) => m.subscribersTotal),
   },
 ])
 
 const performanceSeries = computed(() => [
   {
-    name: 'Open rate %',
+    name: `${t('dashboard.newsletter.openRate')} (%)`,
     data: monthlyBuckets.value.map((m) => m.openRate),
   },
   {
-    name: 'Click rate %',
+    name: `${t('dashboard.newsletter.clickRate')} (%)`,
     data: monthlyBuckets.value.map((m) => m.clickRate),
   },
 ])

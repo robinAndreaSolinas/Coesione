@@ -14,7 +14,10 @@
     </div>
     <div class="flex items-end justify-between gap-3 mt-5">
       <div class="min-w-0 flex-1">
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ label }}</span>
+        <div class="flex items-center gap-2">
+          <target-status-indicator :status="targetStatusComputed" />
+          <span class="text-sm text-gray-500 dark:text-gray-400">{{ label }}</span>
+        </div>
         <h4 class="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
           {{ value }}
           <span v-if="goal" class="font-normal text-gray-500 dark:text-gray-400">
@@ -25,7 +28,7 @@
           v-if="progressPercent != null"
           class="mt-1 text-xs text-gray-500 dark:text-gray-400"
         >
-          {{ Math.round(progressPercent) }}% dell'obiettivo
+          {{ t('common.percentOfGoal', { n: Math.round(progressPercent) }) }}
         </p>
       </div>
       <span
@@ -68,7 +71,14 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import TargetStatusIndicator from '@/components/dashboard/TargetStatusIndicator.vue'
+import { targetStatusFromValues } from '@/utils/targetStatus'
+
+const { t } = useI18n()
+
+const props = defineProps<{
   label: string
   value: string | number
   goal?: string | null
@@ -76,5 +86,12 @@ defineProps<{
   icon?: string
   iconBgClass?: string
   progressPercent?: number | null
+  currentValue?: number | null
+  goalValue?: number | null
 }>()
+
+const targetStatusComputed = computed(() => {
+  if (!props.goal) return null
+  return targetStatusFromValues(props.currentValue, props.goalValue)
+})
 </script>

@@ -6,7 +6,7 @@
           to="/"
           class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
         >
-          Home
+          {{ t('common.home') }}
           <svg
             class="stroke-current"
             width="17"
@@ -33,11 +33,12 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface BreadcrumbProps {
   pageTitle: string
 }
 
 defineProps<BreadcrumbProps>()
+const { t } = useI18n()
 </script>

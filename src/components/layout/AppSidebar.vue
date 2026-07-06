@@ -208,8 +208,10 @@ import DashboardLogo from "./header/DashboardLogo.vue";
 import { useSidebar } from "@/composables/useSidebar";
 import { useAuth } from "@/composables/useAuth";
 import { useAdminVisibility } from "@/composables/useAdminVisibility";
+import { useI18n } from "vue-i18n";
 
 const route = useRoute();
+const { t } = useI18n();
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 const { isAuthenticated, currentUser } = useAuth();
 
@@ -223,30 +225,30 @@ const isEditorOrAdmin = computed(
     currentUser.value?.role === "Admin" || currentUser.value?.role === "Editor"
 );
 
-const menuGroups = [
+const menuGroups = computed(() => [
   {
-    title: "Dashboard",
+    title: t('nav.dashboard'),
     items: [
-      { icon: GridIcon, name: "Totale", path: "/", pageKey: "Totale" },
-      { icon: ChatIcon, name: "Social", path: "/social", pageKey: "Social" },
-      { icon: CameraVideoIcon, name: "Video", path: "/video", pageKey: "Video" },
-      { icon: MailIcon, name: "Newsletter", path: "/newsletter", pageKey: "Newsletter" },
-      { icon: GlobeIcon, name: "Analitiche siti e carta", path: "/siti", pageKey: "Siti" },
-      { icon: SlidersDoubleIcon, name: "Sondaggi + Webinar", path: "/sondaggi", pageKey: "Sondaggi" },
+      { icon: GridIcon, name: t('nav.totale'), path: "/", pageKey: "Totale" },
+      { icon: ChatIcon, name: t('nav.social'), path: "/social", pageKey: "Social" },
+      { icon: CameraVideoIcon, name: t('nav.video'), path: "/video", pageKey: "Video" },
+      { icon: MailIcon, name: t('nav.newsletter'), path: "/newsletter", pageKey: "Newsletter" },
+      { icon: GlobeIcon, name: t('nav.siti'), path: "/siti", pageKey: "Siti" },
+      { icon: SlidersDoubleIcon, name: t('nav.sondaggi'), path: "/sondaggi", pageKey: "Sondaggi" },
     ],
   },
   {
-    title: "Admin",
+    title: t('nav.admin'),
     items: [
-      { icon: SettingsIcon, name: "Gestione Obiettivi", path: "/admin/goals" },
-      { icon: SettingsIcon, name: "API Management", path: "/admin/api-management", adminOnly: true },
+      { icon: SettingsIcon, name: t('nav.goalsAdmin'), path: "/admin/goals" },
+      { icon: SettingsIcon, name: t('nav.apiManagement'), path: "/admin/api-management", adminOnly: true },
     ],
   },
-];
+]);
 
 const visibleMenuGroups = computed(() => {
-  const dashboard = menuGroups[0];
-  const admin = menuGroups[1];
+  const dashboard = menuGroups.value[0];
+  const admin = menuGroups.value[1];
 
   const visibleDashboardItems = dashboard.items.filter((item) => {
     const s = getSettings(item.pageKey);
@@ -261,7 +263,7 @@ const visibleMenuGroups = computed(() => {
     return isEditorOrAdmin.value;
   });
 
-  const groups: typeof menuGroups = [];
+  const groups: { title: string; items: typeof visibleDashboardItems }[] = []
 
   if (visibleDashboardItems.length > 0) {
     groups.push({ ...dashboard, items: visibleDashboardItems });
