@@ -111,6 +111,12 @@ export interface SondaggiStats {
   participantsCount: number
   totalResponses: number
   engagementRatePercent: number
+  satisfactionScore: number | null
+  satisfactionResponses: number
+  regionalDevelopmentRatePercent: number | null
+  regionalDevelopmentAverage: number
+  regionalDevelopmentResponses: number
+  regionalDevelopmentBySheet: Record<string, number>
 }
 
 function getToken(): string | null {

@@ -7,7 +7,11 @@ import {
   fetchSocialPlatforms,
   fetchSocialSummary,
 } from '../lib/socialData.js'
-import { fetchSondaggiAggregates } from '../lib/sondaggiData.js'
+import {
+  fetchSondaggiAggregates,
+  fetchSondaggiSurveyAggregates,
+  type SondaggiSurveyAggregates,
+} from '../lib/sondaggiData.js'
 import { fetchNewsletterCountSent } from '../lib/newsletterData.js'
 import { fetchSiteStatsCount } from '../lib/siteData.js'
 import {
@@ -344,6 +348,13 @@ async function handleSummary(_req: Request, res: Response) {
       console.error('Error fetching sondaggi stats from data API:', e)
     }
 
+    let sondaggiSurveyAgg: SondaggiSurveyAggregates | null = null
+    try {
+      sondaggiSurveyAgg = await fetchSondaggiSurveyAggregates(DATA_API_BASE_URL)
+    } catch (e) {
+      console.error('Error fetching sondaggi survey from data API:', e)
+    }
+
     try {
       socialData = await getSocialAggregates()
     } catch (e) {
@@ -396,19 +407,25 @@ async function handleSummary(_req: Request, res: Response) {
           default:
             current = 0
         }
-      } else if (obj.category === 'sondaggi' && sondaggiAgg) {
+      } else if (obj.category === 'sondaggi' && (sondaggiAgg || sondaggiSurveyAgg)) {
         switch (obj.id) {
           case 'surveys-count':
-            current = sondaggiAgg.surveysCount
+            current = sondaggiAgg?.surveysCount ?? 0
             break
           case 'surveys-total-responses':
-            current = sondaggiAgg.totalResponses
+            current = sondaggiAgg?.totalResponses ?? 0
             break
           case 'surveys-participants-count':
-            current = sondaggiAgg.participantsCount
+            current = sondaggiAgg?.participantsCount ?? 0
             break
           case 'sondaggi-engagement-rate':
-            current = sondaggiAgg.engagementRatePercent / 100
+            current = (sondaggiAgg?.engagementRatePercent ?? 0) / 100
+            break
+          case 'sondaggi-satisfaction-rate':
+            current = sondaggiSurveyAgg?.satisfactionScore ?? 0
+            break
+          case 'sondaggi-regional-development-understanding':
+            current = (sondaggiSurveyAgg?.regionalDevelopmentRatePercent ?? 0) / 100
             break
           default:
             current = 0

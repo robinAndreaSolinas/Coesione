@@ -4,13 +4,32 @@ import type Database from 'better-sqlite3'
 const ADMIN_EMAIL = 'admin@monrif.net'
 const ADMIN_PASSWORD = '5nB+#w4~,]p0k8V=}LWs!u+Nn'
 
+/**
+ * Seed idempotente: se un obiettivo esiste già nel DB, value/unit NON vengono toccati.
+ * Solo INSERT OR IGNORE per id mancanti + rename title/metadata senza alterare i target.
+ */
 export function seed(db: Database.Database) {
-  db.prepare('DELETE FROM users').run()
+  ensureAdminUser(db)
+  ensurePageVisibility(db)
+  removeObsoleteObjectives(db)
+  migrateSocialViewsToInteractions(db)
+  insertMissingObjectives(db)
+  updateObjectiveTitlesOnly(db)
+}
+
+function ensureAdminUser(db: Database.Database) {
+  const existing = db
+    .prepare('SELECT id FROM users WHERE email = ? LIMIT 1')
+    .get(ADMIN_EMAIL) as { id: string } | undefined
+  if (existing) return
+
   const hash = bcrypt.hashSync(ADMIN_PASSWORD, 10)
   db.prepare(
     'INSERT INTO users (id, name, email, password_hash, active, role) VALUES (?, ?, ?, ?, 1, ?)'
   ).run('1', 'Admin', ADMIN_EMAIL, hash, 'Admin')
+}
 
+function ensurePageVisibility(db: Database.Database) {
   const pages = ['Totale', 'Social', 'Video', 'Newsletter', 'Siti', 'Sondaggi']
   const insertPage = db.prepare(
     'INSERT OR IGNORE INTO page_visibility (page_key, is_public, is_visible_for_users) VALUES (?, 0, 1)'
@@ -18,12 +37,12 @@ export function seed(db: Database.Database) {
   for (const p of pages) {
     insertPage.run(p)
   }
+}
 
-  // Rimuove indicatori non presenti nel documento indicatori/output
-  // (evita che restino visibili anche se il DB era già stato inizializzato)
-  db.prepare('DELETE FROM objectives WHERE id = ?').run('surveys-completion-rate')
-  db.prepare('DELETE FROM objectives WHERE id = ?').run('social-audience')
+function removeObsoleteObjectives(db: Database.Database) {
   for (const removedId of [
+    'surveys-completion-rate',
+    'social-audience',
     'social-shares',
     'social-comments',
     'siti-regional-development-understanding',
@@ -37,21 +56,23 @@ export function seed(db: Database.Database) {
   ]) {
     db.prepare('DELETE FROM objectives WHERE id = ?').run(removedId)
   }
-  // social-views → social-interactions (evita UNIQUE se entrambi esistono già)
+}
+
+/** Rinomina id legacy senza resettare value/unit già presenti. */
+function migrateSocialViewsToInteractions(db: Database.Database) {
   const hasInteractions = db
     .prepare("SELECT 1 AS ok FROM objectives WHERE id = 'social-interactions' LIMIT 1")
     .get() as { ok: number } | undefined
   if (hasInteractions) {
     db.prepare("DELETE FROM objectives WHERE id = 'social-views'").run()
-  } else {
-    db.prepare(
-      `UPDATE objectives SET id = 'social-interactions', title = 'Interazioni', value = 50000, unit = 'K' WHERE id = 'social-views'`
-    ).run()
+    return
   }
+  db.prepare(
+    `UPDATE objectives SET id = 'social-interactions', title = 'Interazioni' WHERE id = 'social-views'`
+  ).run()
+}
 
-  const objCount = db.prepare('SELECT COUNT(*) as c FROM objectives').get() as { c: number }
-  // Prosegui: inseriamo solo gli obiettivi mancanti (INSERT OR IGNORE).
-
+function insertMissingObjectives(db: Database.Database) {
   const objectives = [
     // Newsletter
     { id: 'newsletter-open-rate', title: 'Open rate (calcolato)', category: 'newsletter', path: '/newsletter', value: 0.4, unit: '%' },
@@ -71,7 +92,6 @@ export function seed(db: Database.Database) {
     { id: 'social-engagement-rate', title: 'Engagement rate (calcolato)', category: 'social', path: '/social', value: 0.05, unit: '%' },
     { id: 'social-posts-count', title: 'Numero post', category: 'social', path: '/social', value: 306, unit: '' },
     { id: 'social-interactions', title: 'Interazioni', category: 'social', path: '/social', value: 50_000, unit: 'K' },
-    { id: 'social-comments', title: 'Commenti', category: 'social', path: '/social', value: 5_000, unit: 'K' },
     { id: 'social-reach', title: 'Reach', category: 'social', path: '/social', value: 3_000_000, unit: 'M' },
 
     // Social · Facebook
@@ -111,41 +131,40 @@ export function seed(db: Database.Database) {
     { id: 'sondaggi-cohesion-advocacy', title: 'Cohesion Advocacy', category: 'sondaggi', path: '/sondaggi', value: 0.15, unit: '%' },
     { id: 'sondaggi-satisfaction-rate', title: 'Satisfaction rate structured dialogues', category: 'sondaggi', path: '/sondaggi', value: 4, unit: '' },
   ]
+
   const insertObj = db.prepare(
     'INSERT OR IGNORE INTO objectives (id, title, category, path, value, unit) VALUES (?, ?, ?, ?, ?, ?)'
   )
   for (const o of objectives) {
     insertObj.run(o.id, o.title, o.category, o.path, o.value, o.unit)
   }
+}
 
-  db.prepare(
-    `UPDATE objectives SET title = 'Destinatari' WHERE id = 'newsletter-subscribers-active'`
-  ).run()
-  db.prepare(
-    `UPDATE objectives SET title = 'Pagine viste medie per articolo', value = 3000, unit = '' WHERE id = 'articles-pageviews'`
-  ).run()
-  db.prepare(
-    `UPDATE objectives SET title = 'Facebook · Contenuti pubblicati' WHERE id = 'social-facebook-post-count'`
-  ).run()
-  db.prepare(
-    `UPDATE objectives SET title = 'X · Contenuti pubblicati' WHERE id = 'social-x-post-count'`
-  ).run()
-  db.prepare(
-    `UPDATE objectives SET title = 'Articoli Stampati' WHERE id = 'articles-printed-count'`
-  ).run()
-  db.prepare(
-    `UPDATE objectives SET title = 'Utenti unici', value = 1000, unit = '' WHERE id = 'surveys-participants-count'`
-  ).run()
-  db.prepare(
-    `UPDATE objectives SET value = 10000, unit = '' WHERE id = 'surveys-total-responses'`
-  ).run()
-  db.prepare(
-    `UPDATE objectives SET value = 5 WHERE id = 'surveys-count'`
-  ).run()
-  db.prepare(
-    `UPDATE objectives SET title = 'Satisfaction rate structured dialogues' WHERE id = 'sondaggi-satisfaction-rate'`
-  ).run()
-  db.prepare(
-    `UPDATE objectives SET title = 'WP2 · ER Multimedia content', value = 0.1, unit = '%', category = 'totale', path = '/' WHERE id = 'multimedia-engagement-rate'`
-  ).run()
+/** Solo title/category/path — mai value né unit. */
+function updateObjectiveTitlesOnly(db: Database.Database) {
+  const titleUpdates: Array<{ id: string; title: string; category?: string; path?: string }> = [
+    { id: 'newsletter-subscribers-active', title: 'Destinatari' },
+    { id: 'articles-pageviews', title: 'Pagine viste medie per articolo' },
+    { id: 'social-facebook-post-count', title: 'Facebook · Contenuti pubblicati' },
+    { id: 'social-x-post-count', title: 'X · Contenuti pubblicati' },
+    { id: 'articles-printed-count', title: 'Articoli Stampati' },
+    { id: 'surveys-participants-count', title: 'Utenti unici' },
+    { id: 'sondaggi-satisfaction-rate', title: 'Satisfaction rate structured dialogues' },
+    {
+      id: 'multimedia-engagement-rate',
+      title: 'WP2 · ER Multimedia content',
+      category: 'totale',
+      path: '/',
+    },
+  ]
+
+  for (const u of titleUpdates) {
+    if (u.category != null && u.path != null) {
+      db.prepare(
+        'UPDATE objectives SET title = ?, category = ?, path = ? WHERE id = ?'
+      ).run(u.title, u.category, u.path, u.id)
+    } else {
+      db.prepare('UPDATE objectives SET title = ? WHERE id = ?').run(u.title, u.id)
+    }
+  }
 }
