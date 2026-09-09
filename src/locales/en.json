@@ -160,7 +160,16 @@
       "chartSubscribers": "Subscriber growth",
       "chartPerformance": "Send performance",
       "chartPerformanceDescription": "Open rate and click rate by month",
-      "seriesSubscribers": "Subscribers"
+      "seriesSubscribers": "Subscribers",
+      "campaignsTitle": "Sends detail",
+      "campaignsDescription": "One row per send peak (all titles). Metrics cover from send date to the next send (exclusive).",
+      "colSendDate": "Send date",
+      "colSent": "Sent",
+      "colOpens": "Opens",
+      "colOpenRate": "Open rate",
+      "colClicks": "Clicks",
+      "colClickRate": "Click rate",
+      "colTotal": "Total"
     },
     "video": {
       "breadcrumb": "Video analytics",

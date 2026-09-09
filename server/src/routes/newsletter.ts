@@ -1,7 +1,13 @@
 import type { Request, Response } from 'express'
 import { Router } from 'express'
 import { DATA_API_BASE_URL, getDefaultStartDate, getDefaultEndDate } from '../config.js'
-import { fetchNewsletterCountSent } from '../lib/newsletterData.js'
+import {
+  buildCampaignRowsFromDaily,
+  detectSendPeakDates,
+  fetchNewsletterCountPayload,
+  fetchNewsletterCountSent,
+  type NewsletterDayTotals,
+} from '../lib/newsletterData.js'
 
 declare const fetch: (
   url: string,
@@ -53,6 +59,40 @@ async function fetchJson<T>(pathWithQuery: string): Promise<T> {
   return data as T
 }
 
+function aggregateStatsByDay(rows: NewsletterStatsItem[]): {
+  byDay: Map<string, NewsletterDayTotals & { addSubs: number; delSubs: number }>
+  totalSent: number
+  totalOpen: number
+  totalClick: number
+  totalAddSubs: number
+  totalDelSubs: number
+} {
+  const byDay = new Map<string, NewsletterDayTotals & { addSubs: number; delSubs: number }>()
+  let totalSent = 0
+  let totalOpen = 0
+  let totalClick = 0
+  let totalAddSubs = 0
+  let totalDelSubs = 0
+
+  for (const r of rows) {
+    totalSent += r.sent
+    totalOpen += r.open
+    totalClick += r.click
+    totalAddSubs += r.add_subs
+    totalDelSubs += r.del_subs
+
+    const current = byDay.get(r.day) ?? { sent: 0, open: 0, click: 0, addSubs: 0, delSubs: 0 }
+    current.sent += r.sent
+    current.open += r.open
+    current.click += r.click
+    current.addSubs += r.add_subs
+    current.delSubs += r.del_subs
+    byDay.set(r.day, current)
+  }
+
+  return { byDay, totalSent, totalOpen, totalClick, totalAddSubs, totalDelSubs }
+}
+
 async function getNewsletterStats(start: string, end: string): Promise<{
   openRate: number
   clickRate: number
@@ -68,12 +108,14 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     clickRate: number
     subscribersTotal: number
   }[]
+  campaigns: ReturnType<typeof buildCampaignRowsFromDaily>
 }> {
   const path = `/api/v1/newsletter/stats?from_date=${start}&to_date=${end}`
-  const [resp, sentTotal] = await Promise.all([
+  const [resp, countPayload] = await Promise.all([
     fetchJson<NewsletterStatsResponse>(path),
-    fetchNewsletterCountSent(DATA_API_BASE_URL),
+    fetchNewsletterCountPayload(DATA_API_BASE_URL).catch(() => null),
   ])
+  const sentTotal = countPayload ? Number(countPayload.count_sent) || 0 : await fetchNewsletterCountSent(DATA_API_BASE_URL)
   const rows = resp?.data
   if (!Array.isArray(rows) || rows.length === 0) {
     return {
@@ -83,35 +125,12 @@ async function getNewsletterStats(start: string, end: string): Promise<{
       subscribersActive: 0,
       sentTotal,
       daily: [],
+      campaigns: [],
     }
   }
 
-  // Aggregato complessivo
-  let totalSent = 0
-  let totalOpen = 0
-  let totalClick = 0
-  let totalAddSubs = 0
-  let totalDelSubs = 0
-
-  // Aggregazione per giorno
-  const byDay = new Map<string, { sent: number; open: number; click: number; addSubs: number; delSubs: number }>()
-
-  for (const r of rows) {
-    totalSent += r.sent
-    totalOpen += r.open
-    totalClick += r.click
-    totalAddSubs += r.add_subs
-    totalDelSubs += r.del_subs
-
-    const key = r.day
-    const current = byDay.get(key) ?? { sent: 0, open: 0, click: 0, addSubs: 0, delSubs: 0 }
-    current.sent += r.sent
-    current.open += r.open
-    current.click += r.click
-    current.addSubs += r.add_subs
-    current.delSubs += r.del_subs
-    byDay.set(key, current)
-  }
+  const { byDay, totalSent, totalOpen, totalClick, totalAddSubs, totalDelSubs } =
+    aggregateStatsByDay(rows)
 
   const openRateFractionRaw = totalSent > 0 ? totalOpen / totalSent : 0
   const clickRateFractionRaw = totalSent > 0 ? totalClick / totalSent : 0
@@ -121,7 +140,6 @@ async function getNewsletterStats(start: string, end: string): Promise<{
   const subscribersTotal = totalAddSubs
   const subscribersActive = Math.max(subscribersTotal - totalDelSubs, 0)
 
-  // Serie giornaliera (crescita iscritti e performance)
   const sortedDays = Array.from(byDay.entries()).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
 
   let cumulativeSubs = 0
@@ -129,18 +147,23 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     cumulativeSubs += v.addSubs - v.delSubs
     const dayOpenRateRaw = v.sent > 0 ? (v.open / v.sent) * 100 : 0
     const dayClickRateRaw = v.sent > 0 ? (v.click / v.sent) * 100 : 0
-    const dayOpenRate = Math.min(dayOpenRateRaw, 100)
-    const dayClickRate = Math.min(dayClickRateRaw, 100)
     return {
       day,
       sent: v.sent,
       open: v.open,
       click: v.click,
-      openRate: Number(dayOpenRate.toFixed(1)),
-      clickRate: Number(dayClickRate.toFixed(1)),
+      openRate: Number(Math.min(dayOpenRateRaw, 100).toFixed(1)),
+      clickRate: Number(Math.min(dayClickRateRaw, 100).toFixed(1)),
       subscribersTotal: cumulativeSubs,
     }
   })
+
+  const dayTotals = new Map<string, NewsletterDayTotals>()
+  for (const [day, v] of byDay.entries()) {
+    dayTotals.set(day, { sent: v.sent, open: v.open, click: v.click })
+  }
+  const peaks = detectSendPeakDates(countPayload?.data ?? [], dayTotals)
+  const campaigns = buildCampaignRowsFromDaily(dayTotals, peaks)
 
   return {
     openRate: Number((openRateFraction * 100).toFixed(1)),
@@ -149,13 +172,14 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     subscribersActive,
     sentTotal,
     daily,
+    campaigns,
   }
 }
 
 router.get('/metrics', async (_req: Request, res: Response) => {
   try {
     const { start, end } = getDateRange()
-    const { daily, ...summary } = await getNewsletterStats(start, end)
+    const { daily, campaigns, ...summary } = await getNewsletterStats(start, end)
     res.json(summary)
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : 'Errore' })
@@ -167,6 +191,16 @@ router.get('/metrics/daily', async (_req: Request, res: Response) => {
     const { start, end } = getDateRange()
     const { daily } = await getNewsletterStats(start, end)
     res.json(daily)
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : 'Errore' })
+  }
+})
+
+router.get('/campaigns', async (_req: Request, res: Response) => {
+  try {
+    const { start, end } = getDateRange()
+    const { campaigns, openRate, clickRate } = await getNewsletterStats(start, end)
+    res.json({ campaigns, openRate, clickRate })
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : 'Errore' })
   }

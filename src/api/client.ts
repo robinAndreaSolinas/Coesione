@@ -50,6 +50,15 @@ export interface NewsletterDailyPoint {
   subscribersTotal: number
 }
 
+export interface NewsletterCampaignRow {
+  sendDate: string
+  sent: number
+  open: number
+  click: number
+  openRate: number
+  clickRate: number
+}
+
 export interface SiteMetrics {
   uniqueUsers: number
   pageviews: number
@@ -198,6 +207,10 @@ export const api = {
   newsletter: {
     getMetrics: () => request<NewsletterMetrics>('/newsletter/metrics'),
     getDailyMetrics: () => request<NewsletterDailyPoint[]>('/newsletter/metrics/daily'),
+    getCampaigns: () =>
+      request<{ campaigns: NewsletterCampaignRow[]; openRate: number; clickRate: number }>(
+        '/newsletter/campaigns',
+      ),
   },
   site: {
     getMetrics: () => request<SiteMetrics>('/site/metrics'),

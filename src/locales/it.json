@@ -160,7 +160,16 @@
       "chartSubscribers": "Crescita iscritti",
       "chartPerformance": "Performance invii",
       "chartPerformanceDescription": "Open rate e click rate per mese",
-      "seriesSubscribers": "Iscritti"
+      "seriesSubscribers": "Iscritti",
+      "campaignsTitle": "Dettaglio invii",
+      "campaignsDescription": "Una riga per picco di invio (tutte le testate). Le metriche coprono dal giorno di invio al successivo (escluso).",
+      "colSendDate": "Data invio",
+      "colSent": "Invii",
+      "colOpens": "Aperture",
+      "colOpenRate": "Open rate",
+      "colClicks": "Click",
+      "colClickRate": "Click rate",
+      "colTotal": "Totale"
     },
     "video": {
       "breadcrumb": "Analitiche Video",

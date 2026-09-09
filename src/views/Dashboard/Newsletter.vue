@@ -75,6 +75,58 @@
           y-axis-format="percent"
         />
       </div>
+      <div v-if="campaigns.length > 0" class="col-span-12">
+        <div
+          class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+        >
+          <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800 sm:px-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+              {{ t('dashboard.newsletter.campaignsTitle') }}
+            </h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('dashboard.newsletter.campaignsDescription') }}
+            </p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
+              <thead class="bg-gray-50 dark:bg-white/[0.03]">
+                <tr class="text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th class="px-5 py-3 sm:px-6">{{ t('dashboard.newsletter.colSendDate') }}</th>
+                  <th class="px-5 py-3 text-right sm:px-6">{{ t('dashboard.newsletter.colSent') }}</th>
+                  <th class="px-5 py-3 text-right sm:px-6">{{ t('dashboard.newsletter.colOpens') }}</th>
+                  <th class="px-5 py-3 text-right sm:px-6">{{ t('dashboard.newsletter.colOpenRate') }}</th>
+                  <th class="px-5 py-3 text-right sm:px-6">{{ t('dashboard.newsletter.colClicks') }}</th>
+                  <th class="px-5 py-3 text-right sm:px-6">{{ t('dashboard.newsletter.colClickRate') }}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tr
+                  v-for="row in campaigns"
+                  :key="row.sendDate"
+                  class="text-gray-800 dark:text-white/90"
+                >
+                  <td class="whitespace-nowrap px-5 py-3 font-medium sm:px-6">{{ formatSendDate(row.sendDate) }}</td>
+                  <td class="whitespace-nowrap px-5 py-3 text-right tabular-nums sm:px-6">{{ formatInt(row.sent) }}</td>
+                  <td class="whitespace-nowrap px-5 py-3 text-right tabular-nums sm:px-6">{{ formatInt(row.open) }}</td>
+                  <td class="whitespace-nowrap px-5 py-3 text-right tabular-nums sm:px-6">{{ formatPercent(row.openRate) }}</td>
+                  <td class="whitespace-nowrap px-5 py-3 text-right tabular-nums sm:px-6">{{ formatInt(row.click) }}</td>
+                  <td class="whitespace-nowrap px-5 py-3 text-right tabular-nums sm:px-6">{{ formatPercent(row.clickRate) }}</td>
+                </tr>
+              </tbody>
+              <tfoot class="bg-gray-50 dark:bg-white/[0.03]">
+                <tr class="font-semibold text-gray-800 dark:text-white/90">
+                  <td class="px-5 py-3 sm:px-6">{{ t('dashboard.newsletter.colTotal') }}</td>
+                  <td class="px-5 py-3 text-right tabular-nums sm:px-6">{{ formatInt(campaignTotals.sent) }}</td>
+                  <td class="px-5 py-3 text-right tabular-nums sm:px-6">{{ formatInt(campaignTotals.open) }}</td>
+                  <td class="px-5 py-3 text-right tabular-nums sm:px-6">{{ formatPercent(campaignTotals.openRate) }}</td>
+                  <td class="px-5 py-3 text-right tabular-nums sm:px-6">{{ formatInt(campaignTotals.click) }}</td>
+                  <td class="px-5 py-3 text-right tabular-nums sm:px-6">{{ formatPercent(campaignTotals.clickRate) }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </admin-layout>
 </template>
@@ -86,6 +138,7 @@ import { useGoals } from '@/composables/useGoals'
 import { useObjectives, objectiveTargetPair } from '@/composables/useObjectives'
 import { useNewsletter } from '@/composables/useNewsletter'
 import { useNewsletterDaily } from '@/composables/useNewsletterDaily'
+import { useNewsletterCampaigns } from '@/composables/useNewsletterCampaigns'
 import { useMetrics } from '@/composables/useMetrics'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
@@ -93,12 +146,40 @@ import MetricCard from '@/components/dashboard/MetricCard.vue'
 import GoalProgress from '@/components/dashboard/GoalProgress.vue'
 import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { goals } = useGoals()
 const { objectives, formatGoal } = useObjectives()
 const { metrics, formatPercent } = useNewsletter()
 const { dailyPoints } = useNewsletterDaily()
+const { campaigns } = useNewsletterCampaigns()
 const { formatMetricValue } = useMetrics()
+
+function formatInt(value: number): string {
+  return new Intl.NumberFormat(locale.value === 'it' ? 'it-IT' : 'en-GB').format(Math.round(value))
+}
+
+function formatSendDate(isoDay: string): string {
+  const [y, m, d] = isoDay.split('-').map(Number)
+  if (!y || !m || !d) return isoDay
+  return new Intl.DateTimeFormat(locale.value === 'it' ? 'it-IT' : 'en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(y, m - 1, d))
+}
+
+const campaignTotals = computed(() => {
+  const sent = campaigns.value.reduce((s, r) => s + r.sent, 0)
+  const open = campaigns.value.reduce((s, r) => s + r.open, 0)
+  const click = campaigns.value.reduce((s, r) => s + r.click, 0)
+  return {
+    sent,
+    open,
+    click,
+    openRate: sent > 0 ? Number(Math.min((open / sent) * 100, 100).toFixed(1)) : 0,
+    clickRate: sent > 0 ? Number(Math.min((click / sent) * 100, 100).toFixed(1)) : 0,
+  }
+})
 
 function denormalizeForUnit(raw: number, unit: string): number {
   if (unit === 'K') return raw / 1_000
