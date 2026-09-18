@@ -4,6 +4,7 @@ import { db } from '../db/index.js'
 import { DATA_API_BASE_URL, getDefaultStartDate, getDefaultEndDate } from '../config.js'
 import {
   currentForSocialObjective,
+  fetchSocialDashboard,
   fetchSocialPlatforms,
   fetchSocialSummary,
 } from '../lib/socialData.js'
@@ -250,7 +251,7 @@ async function getSocialAggregates(): Promise<{
   platforms: Awaited<ReturnType<typeof fetchSocialPlatforms>>
 } | null> {
   try {
-    const [summary, platforms] = await Promise.all([fetchSocialSummary(), fetchSocialPlatforms()])
+    const { summary, platforms } = await fetchSocialDashboard()
     return { summary, platforms }
   } catch (e) {
     console.error('Error fetching social aggregates:', e)

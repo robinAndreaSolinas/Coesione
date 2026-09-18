@@ -16,7 +16,7 @@
     "progress": "Progresso",
     "aboveTarget": "Sopra target",
     "belowTarget": "Sotto target",
-    "percentOfGoalReached": "{n}% dell'obiettivo raggiunto",
+    "percentOfGoalReached": "{n}% degli obiettivi superati",
     "reached": "Raggiunti",
     "notReached": "Non raggiunti",
     "reachedLegend": "Raggiunti: {percent}% ({count})",
@@ -112,7 +112,7 @@
       "overallTitle": "Raggiungimento complessivo obiettivi",
       "overallDescription": "Goal raggiunti vs non raggiunti su tutte le sezioni",
       "categoryDetailTitle": "Dettaglio per categoria",
-      "categoryDetailDescription": "Ogni cerchio mostra il progresso della singola area rispetto al proprio target"
+      "categoryDetailDescription": "Percentuale di obiettivi superati in ciascuna area"
     },
     "social": {
       "breadcrumb": "Analitiche Social",

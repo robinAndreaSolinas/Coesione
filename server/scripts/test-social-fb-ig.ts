@@ -4,14 +4,14 @@
  */
 import {
   averagePostReach,
-  fetchSocialPlatforms,
+  fetchSocialDashboard,
   fetchSocialPostCount,
-  fetchSocialSummary,
   platformEngagementRatePercent,
   platformInteractions,
   rawReach,
   summaryFromPlatforms,
   toPlatformPoint,
+  totalPostsCount,
   unwrapApiPayload,
   type SocialAggregate,
 } from '../src/lib/socialData.js'
@@ -88,11 +88,7 @@ async function testInstagram(raw: SocialAggregate | null, postsCount: number) {
 
 async function testSummary() {
   console.log('\n=== TOTALE (FB + IG + X + TT, no YT/Other) ===')
-  const [platforms, postsMap, summary] = await Promise.all([
-    fetchSocialPlatforms(),
-    fetchSocialPostCount(),
-    fetchSocialSummary(),
-  ])
+  const { platforms, postsMap, summary } = await fetchSocialDashboard()
 
   const points = [platforms.facebook, platforms.instagram, platforms.x, platforms.tiktok]
   const recomputed = summaryFromPlatforms(points)
@@ -111,11 +107,26 @@ async function testSummary() {
     line('in ER totale', p.reachTotal > 0 ? 'sì' : 'no')
   }
 
+  console.log('\n=== POST COUNT (post/count) ===')
+  line('all (dashboard)', postsMap.all ?? 0)
+  line('facebook', postsMap.facebook ?? 0)
+  line('instagram', postsMap.instagram ?? 0)
+  line('x', postsMap.x ?? 0)
+  line('tiktok', postsMap.tiktok ?? 0)
+  line('youtube (escluso UI)', postsMap.youtube ?? 0)
+  line('other (escluso UI)', postsMap.other ?? 0)
+  line('total (tutte)', postsMap.total ?? 0)
+  line('unique_count', postsMap.unique_count ?? 0)
+  line('duplicate_count', postsMap.duplicate_count ?? 0)
+  line('totalPostsCount()', totalPostsCount(postsMap))
+
   console.log('\n  Aggregato summary:')
   line('interactionsTotal (tutte)', summary.interactionsTotal)
   line('reachTotal card (display)', summary.reachTotal.toFixed(2))
+  line('postsCount (summary)', summary.postsCount)
   line('ER totale %', pct(summary.engagementRateTotalPercent))
-  line('Match recomputed', recomputed.engagementRateTotalPercent === summary.engagementRateTotalPercent ? 'OK' : 'MISMATCH')
+  line('Match recomputed ER', recomputed.engagementRateTotalPercent === summary.engagementRateTotalPercent ? 'OK' : 'MISMATCH')
+  line('Match posts all', summary.postsCount === totalPostsCount(postsMap) ? 'OK' : 'MISMATCH')
 
   const forEr = points.filter((p) => p.reachTotal > 0)
   const interEr = forEr.reduce((s, p) => s + p.interactions, 0)
