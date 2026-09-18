@@ -83,7 +83,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ObjectiveCard from '@/components/dashboard/ObjectiveCard.vue'
 import CategoryProgressCard from '@/components/dashboard/CategoryProgressCard.vue'
-import { isVisibleOnTotale, countsTowardTotaleProgress } from '@/utils/totaleObjectives'
+import { isVisibleOnTotale, countsTowardTotaleProgress, bollinoStatus } from '@/utils/totaleObjectives'
 
 const { t } = useI18n()
 const { objectives } = useObjectives()
@@ -114,12 +114,14 @@ const totaleMetrics = computed(() =>
   metricsForView.value.filter((m) => countsTowardTotaleProgress(m.key)),
 )
 
-const overallTotalGoals = computed(() => totaleMetrics.value.length)
+const overallTotalGoals = computed(() =>
+  totaleMetrics.value.filter((m) => bollinoStatus(m.current, m.goal) != null).length,
+)
 const overallReachedGoals = computed(() =>
-  totaleMetrics.value.filter((m) => m.goal > 0 && m.current >= m.goal).length
+  totaleMetrics.value.filter((m) => bollinoStatus(m.current, m.goal) === 'above').length,
 )
 const overallNotReachedGoals = computed(() =>
-  Math.max(overallTotalGoals.value - overallReachedGoals.value, 0)
+  totaleMetrics.value.filter((m) => bollinoStatus(m.current, m.goal) === 'below').length,
 )
 const overallPieSeries = computed(() => [overallReachedGoals.value, overallNotReachedGoals.value])
 

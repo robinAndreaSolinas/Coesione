@@ -16,7 +16,7 @@
     "progress": "Progresso",
     "aboveTarget": "Sopra target",
     "belowTarget": "Sotto target",
-    "percentOfGoalReached": "{n}% degli obiettivi superati",
+    "percentOfGoalReached": "{n}% bollini verdi",
     "reached": "Raggiunti",
     "notReached": "Non raggiunti",
     "reachedLegend": "Raggiunti: {percent}% ({count})",
@@ -112,7 +112,7 @@
       "overallTitle": "Raggiungimento complessivo obiettivi",
       "overallDescription": "Goal raggiunti vs non raggiunti su tutte le sezioni",
       "categoryDetailTitle": "Dettaglio per categoria",
-      "categoryDetailDescription": "Percentuale di obiettivi superati in ciascuna area"
+      "categoryDetailDescription": "Percentuale di bollini verdi (target superati) su verdi + rossi in ciascuna sezione"
     },
     "social": {
       "breadcrumb": "Analitiche Social",

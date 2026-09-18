@@ -16,7 +16,7 @@
     "progress": "Progress",
     "aboveTarget": "Above target",
     "belowTarget": "Below target",
-    "percentOfGoalReached": "{n}% of objectives surpassed",
+    "percentOfGoalReached": "{n}% green bollini",
     "reached": "Reached",
     "notReached": "Not reached",
     "reachedLegend": "Reached: {percent}% ({count})",
@@ -112,7 +112,7 @@
       "overallTitle": "Overall objectives achievement",
       "overallDescription": "Goals reached vs not reached across all sections",
       "categoryDetailTitle": "Detail by category",
-      "categoryDetailDescription": "Percentage of objectives surpassed in each area"
+      "categoryDetailDescription": "Share of green bollini (targets met) out of green + red in each section"
     },
     "social": {
       "breadcrumb": "Social analytics",
