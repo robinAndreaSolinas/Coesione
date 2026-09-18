@@ -78,18 +78,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useGoals } from '@/composables/useGoals'
 import { useObjectives, objectiveTargetPair } from '@/composables/useObjectives'
 import { useMetrics } from '@/composables/useMetrics'
 import { useSocialSummary } from '@/composables/useSocialSummary'
-import { api, type SocialPlatformsData } from '@/api/client'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
 import GoalProgress from '@/components/dashboard/GoalProgress.vue'
-import AnalyticsChart from '@/components/dashboard/AnalyticsChart.vue'
 
 import { formatDisplayValue } from '@/utils/metricFormat'
 
@@ -128,23 +126,12 @@ function denormalizeForDisplay(raw: number, unit: string): number {
   return raw
 }
 
-const chartCategories = computed(() => ['Totale'])
-
-const platforms = ref<SocialPlatformsData | null>(null)
-onMounted(async () => {
-  try {
-    const resp = await api.social.platforms()
-    platforms.value = resp?.data ?? null
-  } catch {
-    platforms.value = null
-  }
-})
-
 const {
   interactionsTotal,
   reachTotal,
   engagementRateTotalPercent,
   postsCount,
+  platforms,
 } = useSocialSummary()
 
 const socialCurrent = computed(() => {
@@ -192,14 +179,6 @@ const socialProgressPercent = computed(() => {
   const progressRaw = (engagementRateTotalPercent.value / goalVisual) * 100
   return Math.max(0, Math.min(progressRaw, 999))
 })
-
-const chartSeries = computed(() => [
-  { name: t('dashboard.social.chartInteractions'), data: [denormalizeForDisplay(interactionsTotal.value, 'K')] },
-])
-
-const engagementSeries = computed(() => [
-  { name: t('dashboard.social.chartEngagementRate'), data: [engagementRateTotalPercent.value] },
-])
 
 function platformGoalFor(id: string, fallbackValue: number, fallbackUnit: string): { value: number; unit: string } {
   const obj = objectives.value.find((o) => o.id === id)

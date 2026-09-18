@@ -106,6 +106,26 @@ export interface SocialPlatformsData {
   tiktok: SocialPlatformPoint
 }
 
+export interface SocialPostCountData {
+  all?: number
+  facebook?: number
+  instagram?: number
+  x?: number
+  tiktok?: number
+  youtube?: number
+  other?: number
+  total?: number
+  unique_count?: number
+  duplicate_count?: number
+  postsCount?: number
+}
+
+export interface SocialDashboardData {
+  summary: SocialSummaryData
+  platforms: SocialPlatformsData
+  postCount: SocialPostCountData
+}
+
 export interface ApiMetricSummary {
   category: string
   key: string
@@ -224,6 +244,8 @@ export const api = {
   social: {
     summary: () => request<{ success: boolean; data: SocialSummaryData }>('/social/summary'),
     platforms: () => request<{ success: boolean; data: SocialPlatformsData }>('/social/platforms'),
+    postCount: () => request<{ success: boolean; data: SocialPostCountData }>('/social/post-count'),
+    dashboard: () => request<{ success: boolean; data: SocialDashboardData }>('/social/dashboard'),
   },
   metrics: {
     summary: () => request<ApiMetricSummary[]>('/metrics/summary'),

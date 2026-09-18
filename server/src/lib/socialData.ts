@@ -85,10 +85,23 @@ export function safeNumber(v: unknown): number {
 
 export function unwrapApiPayload<T>(json: unknown): T | null {
   if (json == null) return null
-  if (typeof json === 'object' && json !== null && 'success' in json) {
-    const env = json as ApiEnvelope<T>
-    if (env.success === false) return null
-    return (env.data ?? null) as T | null
+  if (typeof json === 'object' && json !== null) {
+    const obj = json as ApiEnvelope<T> & Record<string, unknown>
+    if ('success' in obj) {
+      if (obj.success === false) return null
+      if ('data' in obj) return (obj.data ?? null) as T | null
+    }
+    // Envelope senza `success` ma con `data` oggetto (alcune versioni Data API)
+    if (
+      'data' in obj &&
+      obj.data != null &&
+      typeof obj.data === 'object' &&
+      !('facebook' in obj) &&
+      !('all' in obj) &&
+      !('total_reach' in obj)
+    ) {
+      return obj.data as T
+    }
   }
   return json as T
 }
