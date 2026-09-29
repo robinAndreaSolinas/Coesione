@@ -35,15 +35,15 @@
         />
         <metric-card
           :label="t('dashboard.newsletter.feedbackPositive')"
-          value="—"
+          :value="feedbackDisplay"
           :goal="newsletterGoals.feedbackPositive"
+          :current-value="feedbackVisual"
+          :goal-value="feedbackVisual == null ? null : objectiveTargetPair(objectives, 'newsletter-feedback-positive', feedbackVisual).goalValue"
           :trend="null"
         >
-          <template #footer>
-            <div
-              class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-snug text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
-            >
-              {{ t('common.placeholderNotProgrammatic') }}
+          <template v-if="metrics.feedbackResponses > 0" #footer>
+            <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('dashboard.newsletter.gradimentoResponses', { n: metrics.feedbackResponses }) }}
             </div>
           </template>
         </metric-card>
@@ -198,6 +198,10 @@ const openRateDisplay = computed(() => formatPercent(metrics.value.openRate))
 const clickRateDisplay = computed(() => formatPercent(metrics.value.clickRate))
 const openRateVisual = computed(() => metrics.value.openRate)
 const clickRateVisual = computed(() => metrics.value.clickRate)
+const feedbackVisual = computed(() => metrics.value.feedbackPositiveRate)
+const feedbackDisplay = computed(() =>
+  feedbackVisual.value == null ? '—' : formatPercent(feedbackVisual.value),
+)
 
 const newsletterObjectivesById = computed(
   () =>

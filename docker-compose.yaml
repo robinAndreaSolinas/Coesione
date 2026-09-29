@@ -29,13 +29,25 @@ services:
       retries: 3
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: coesione-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    networks:
+      - default
+    restart: unless-stopped
+
   server:
     build: ./server
     container_name: coesione-server
+    depends_on:
+      - redis
     volumes:
       - ./server/data:/app/data
     environment:
       - PORT=3001
+      - REDIS_URL=redis://redis:6379
+      - DATA_API_CACHE_TTL_SECONDS=300
     networks:
       - default
     healthcheck:

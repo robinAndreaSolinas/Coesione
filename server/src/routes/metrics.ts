@@ -2,6 +2,8 @@ import type { Request, Response } from 'express'
 import { Router } from 'express'
 import { db } from '../db/index.js'
 import { DATA_API_BASE_URL, getDefaultStartDate, getDefaultEndDate } from '../config.js'
+import { dataApiUrl, fetchDataApiJson } from '../lib/dataApi.js'
+import { monthAvgFromUniqueUsers, numberFromApiPayload } from '../lib/apiPayload.js'
 import {
   currentForSocialObjective,
   fetchSocialDashboard,
@@ -13,7 +15,7 @@ import {
   fetchSondaggiSurveyAggregates,
   type SondaggiSurveyAggregates,
 } from '../lib/sondaggiData.js'
-import { fetchNewsletterCountSent } from '../lib/newsletterData.js'
+import { fetchNewsletterCountSent, fetchNewsletterGradimento } from '../lib/newsletterData.js'
 import { fetchSiteStatsCount } from '../lib/siteData.js'
 import {
   multimediaEngagementRateFraction,
@@ -150,13 +152,7 @@ function getDateRange(): { start: string; end: string } {
 }
 
 async function fetchJson<T>(pathWithQuery: string): Promise<T> {
-  const url = `${DATA_API_BASE_URL}${pathWithQuery}`
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`Data API error: ${res.status} ${res.statusText}`)
-  }
-  const data = await res.json()
-  return data as T
+  return (await fetchDataApiJson(dataApiUrl(pathWithQuery))) as T
 }
 
 async function getNewsletterAggregates(start: string, end: string): Promise<NewsletterAggregates | null> {
@@ -216,17 +212,7 @@ async function getSiteAggregates(start: string, end: string): Promise<SiteAggreg
       ).catch(() => null),
     ])
 
-    let uniqueUsers = 0
-    if (uniqueResp?.success && uniqueResp.data) {
-      const outerData = uniqueResp.data as {
-        success?: boolean
-        data?: { month_avg?: number }
-      }
-      const inner = outerData?.data
-      if (inner && inner.month_avg != null) {
-        uniqueUsers = Number(inner.month_avg) || 0
-      }
-    }
+    const uniqueUsers = monthAvgFromUniqueUsers(uniqueResp)
 
     return {
       uniqueUsers,
@@ -277,12 +263,12 @@ async function getVideoAggregates(start: string, end: string): Promise<VideoAggr
 
   // Caso 1: endpoint già aggregato (compatibilità)
   if ('audience' in resp && 'minutesWatched' in resp && 'vthAvg' in resp) {
-    const countResp = await fetchJson<number>('/api/v1/video/count').catch(() => 0)
+    const countResp = await fetchJson<unknown>('/api/v1/video/count').catch(() => 0)
     return {
       audience: toNum(resp.audience),
       minutesWatched: toNum(resp.minutesWatched),
       completionRateFraction: toNum(resp.vthAvg),
-      audiovisualCount: toNum(resp.audiovisualCount) || toNum(countResp),
+      audiovisualCount: toNum(resp.audiovisualCount) || numberFromApiPayload(countResp),
     }
   }
 
@@ -306,13 +292,13 @@ async function getVideoAggregates(start: string, end: string): Promise<VideoAggr
       vthCount += 1
     }
   }
-  const countResp = await fetchJson<number>('/api/v1/video/count').catch(() => 0)
+  const countResp = await fetchJson<unknown>('/api/v1/video/count').catch(() => 0)
 
   return {
     audience: totalStreams,
     minutesWatched: totalWatchedSeconds / 60,
     completionRateFraction: vthCount > 0 ? vthSum / vthCount : 0,
-    audiovisualCount: toNum(countResp),
+    audiovisualCount: numberFromApiPayload(countResp),
   }
 }
 
@@ -327,6 +313,7 @@ async function handleSummary(_req: Request, res: Response) {
       .all() as ObjectiveRow[]
 
     let newsletterAgg: NewsletterAggregates | null = null
+    let newsletterGradimento: Awaited<ReturnType<typeof fetchNewsletterGradimento>> = null
     let siteAgg: SiteAggregates | null = null
     let sondaggiAgg: SondaggiAggregates | null = null
     let socialData: Awaited<ReturnType<typeof getSocialAggregates>> = null
@@ -335,6 +322,12 @@ async function handleSummary(_req: Request, res: Response) {
       newsletterAgg = await getNewsletterAggregates(start, end)
     } catch (e) {
       console.error('Error fetching newsletter stats from data API:', e)
+    }
+
+    try {
+      newsletterGradimento = await fetchNewsletterGradimento(DATA_API_BASE_URL)
+    } catch (e) {
+      console.error('Error fetching newsletter gradimento from data API:', e)
     }
 
     try {
@@ -371,7 +364,9 @@ async function handleSummary(_req: Request, res: Response) {
     const result: MetricSummary[] = objectives.map((obj) => {
       let current = 0
 
-      if (obj.category === 'newsletter' && newsletterAgg) {
+      if (obj.id === 'newsletter-feedback-positive') {
+        current = newsletterGradimento ? newsletterGradimento.rate / 100 : 0
+      } else if (obj.category === 'newsletter' && newsletterAgg) {
         switch (obj.id) {
           case 'newsletter-open-rate':
             current = newsletterAgg.openRateFraction

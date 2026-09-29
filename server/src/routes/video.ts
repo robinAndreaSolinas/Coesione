@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express'
 import { Router } from 'express'
-import { DATA_API_BASE_URL, getDefaultStartDate, getDefaultEndDate } from '../config.js'
+import { getDefaultStartDate, getDefaultEndDate } from '../config.js'
+import { dataApiUrl, fetchDataApiJson } from '../lib/dataApi.js'
+import { numberFromApiPayload } from '../lib/apiPayload.js'
 
 declare const fetch: (
   url: string,
@@ -55,13 +57,7 @@ function getDateRange(): { start: string; end: string } {
 }
 
 async function fetchJson<T>(pathWithQuery: string): Promise<T> {
-  const url = `${DATA_API_BASE_URL}${pathWithQuery}`
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`Data API error: ${res.status} ${res.statusText}`)
-  }
-  const data = await res.json()
-  return data as T
+  return (await fetchDataApiJson(dataApiUrl(pathWithQuery))) as T
 }
 
 router.get('/stats', async (_req: Request, res: Response) => {
@@ -69,7 +65,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
     const { start, end } = getDateRange()
     const path = `/api/v1/video/stats?from_date=${start}&to_date=${end}`
     const resp = await fetchJson<RawVideoStatsResponse>(path)
-    const audiovisualCount = await fetchJson<number>('/api/v1/video/count').catch(() => 0)
+    const audiovisualCount = await fetchJson<unknown>('/api/v1/video/count').catch(() => 0)
 
     if (!resp.success || !Array.isArray(resp.data)) {
       res.status(502).json({ error: 'Risposta non valida dal data API' })
@@ -112,7 +108,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
       audience: totalStreams,
       minutesWatched,
       vthAvg,
-      audiovisualCount: Number(audiovisualCount) || 0,
+      audiovisualCount: numberFromApiPayload(audiovisualCount),
       daily,
     }
 

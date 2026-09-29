@@ -1,7 +1,9 @@
 import type { Request, Response } from 'express'
 import { Router } from 'express'
-import { DATA_API_BASE_URL, getDefaultStartDate, getDefaultEndDate } from '../config.js'
+import { getDefaultStartDate, getDefaultEndDate } from '../config.js'
+import { dataApiUrl, fetchDataApiJson } from '../lib/dataApi.js'
 import { fetchSiteStatsCount } from '../lib/siteData.js'
+import { monthAvgFromUniqueUsers } from '../lib/apiPayload.js'
 
 declare const fetch: (
   url: string,
@@ -51,13 +53,7 @@ function getDateRange(): { start: string; end: string } {
 }
 
 async function fetchJson<T>(pathWithQuery: string): Promise<T> {
-  const url = `${DATA_API_BASE_URL}${pathWithQuery}`
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`Data API error: ${res.status} ${res.statusText}`)
-  }
-  const data = await res.json()
-  return data as T
+  return (await fetchDataApiJson(dataApiUrl(pathWithQuery))) as T
 }
 
 router.get('/metrics', async (_req: Request, res: Response) => {
@@ -70,12 +66,7 @@ router.get('/metrics', async (_req: Request, res: Response) => {
       fetchJson<SiteUniqueUserResponseRaw>(uniquePath),
     ])
 
-    let uniqueUsers = 0
-    const uniqueOuter = uniqueResp?.data
-    const uniqueInner = uniqueOuter?.data
-    if (uniqueInner && uniqueInner.month_avg != null) {
-      uniqueUsers = Number(uniqueInner.month_avg) || 0
-    }
+    const uniqueUsers = monthAvgFromUniqueUsers(uniqueResp)
 
     const payload: SiteMetricsPayload = {
       uniqueUsers,

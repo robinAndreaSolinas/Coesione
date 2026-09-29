@@ -7,6 +7,8 @@ const metrics = ref<NewsletterMetrics>({
   subscribersTotal: 0,
   subscribersActive: 0,
   sentTotal: 0,
+  feedbackPositiveRate: null,
+  feedbackResponses: 0,
 })
 
 export function useNewsletter() {
@@ -20,6 +22,8 @@ export function useNewsletter() {
         subscribersTotal: 0,
         subscribersActive: 0,
         sentTotal: 0,
+        feedbackPositiveRate: null,
+        feedbackResponses: 0,
       }
     }
   }

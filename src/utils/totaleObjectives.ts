@@ -21,10 +21,11 @@ const SECTION_BOLLINO_IDS = new Set<string>([
   'video-audiovisual-count',
   'video-audience',
 
-  // Newsletter — 3 bollini (destinatari senza target, feedback placeholder)
+  // Newsletter — 4 bollini (destinatari senza target)
   'newsletter-open-rate',
   'newsletter-click-rate',
   'newsletter-sent',
+  'newsletter-feedback-positive',
 
   // Siti — 4 bollini (stampati = placeholder senza current)
   'articles-unique-users',

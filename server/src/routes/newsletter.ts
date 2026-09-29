@@ -1,11 +1,13 @@
 import type { Request, Response } from 'express'
 import { Router } from 'express'
 import { DATA_API_BASE_URL, getDefaultStartDate, getDefaultEndDate } from '../config.js'
+import { dataApiUrl, fetchDataApiJson } from '../lib/dataApi.js'
 import {
   buildCampaignRowsFromDaily,
   detectSendPeakDates,
   fetchNewsletterCountPayload,
   fetchNewsletterCountSent,
+  fetchNewsletterGradimento,
   type NewsletterDayTotals,
 } from '../lib/newsletterData.js'
 
@@ -50,13 +52,7 @@ function getDateRange(): { start: string; end: string } {
 }
 
 async function fetchJson<T>(pathWithQuery: string): Promise<T> {
-  const url = `${DATA_API_BASE_URL}${pathWithQuery}`
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`Data API error: ${res.status} ${res.statusText}`)
-  }
-  const data = await res.json()
-  return data as T
+  return (await fetchDataApiJson(dataApiUrl(pathWithQuery))) as T
 }
 
 function aggregateStatsByDay(rows: NewsletterStatsItem[]): {
@@ -99,6 +95,8 @@ async function getNewsletterStats(start: string, end: string): Promise<{
   subscribersTotal: number
   subscribersActive: number
   sentTotal: number
+  feedbackPositiveRate: number | null
+  feedbackResponses: number
   daily: {
     day: string
     sent: number
@@ -111,9 +109,10 @@ async function getNewsletterStats(start: string, end: string): Promise<{
   campaigns: ReturnType<typeof buildCampaignRowsFromDaily>
 }> {
   const path = `/api/v1/newsletter/stats?from_date=${start}&to_date=${end}`
-  const [resp, countPayload] = await Promise.all([
+  const [resp, countPayload, gradimento] = await Promise.all([
     fetchJson<NewsletterStatsResponse>(path),
     fetchNewsletterCountPayload(DATA_API_BASE_URL).catch(() => null),
+    fetchNewsletterGradimento(DATA_API_BASE_URL),
   ])
   const sentTotal = countPayload ? Number(countPayload.count_sent) || 0 : await fetchNewsletterCountSent(DATA_API_BASE_URL)
   const rows = resp?.data
@@ -124,6 +123,8 @@ async function getNewsletterStats(start: string, end: string): Promise<{
       subscribersTotal: 0,
       subscribersActive: 0,
       sentTotal,
+      feedbackPositiveRate: gradimento?.rate ?? null,
+      feedbackResponses: gradimento?.responses ?? 0,
       daily: [],
       campaigns: [],
     }
@@ -171,6 +172,8 @@ async function getNewsletterStats(start: string, end: string): Promise<{
     subscribersTotal,
     subscribersActive,
     sentTotal,
+    feedbackPositiveRate: gradimento?.rate ?? null,
+    feedbackResponses: gradimento?.responses ?? 0,
     daily,
     campaigns,
   }

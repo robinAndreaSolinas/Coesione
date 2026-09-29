@@ -1,3 +1,5 @@
+import { fetchDataApiJson } from './dataApi.js'
+
 declare const fetch: (
   url: string,
   options?: { signal?: AbortSignal }
@@ -41,6 +43,17 @@ export interface NewsletterCampaignRow {
   clickRate: number
 }
 
+/** Risposta GET /api/v1/newsletter/gradimento */
+export interface NewsletterGradimento {
+  responses: number
+  totalVotes: number
+  average: number
+  /** Percentuale 0–100 (es. 83.48). Target dashboard: 70%. */
+  rate: number
+  targetRate: number
+  targetAchieved: boolean
+}
+
 /** Giorni di invio ravvicinati (es. ritardi di una testata) appartengono alla stessa campagna. */
 const SEND_CLUSTER_GAP_DAYS = 7
 
@@ -64,17 +77,7 @@ export async function fetchNewsletterCountPayload(
   timeoutMs = 15000,
 ): Promise<NewsletterCountResponse> {
   const url = `${baseUrl}/api/v1/newsletter/count`
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const res = await fetch(url, { signal: controller.signal })
-    if (!res.ok) {
-      throw new Error(`Data API error: ${res.status} ${res.statusText}`)
-    }
-    return (await res.json()) as NewsletterCountResponse
-  } finally {
-    clearTimeout(timeout)
-  }
+  return (await fetchDataApiJson(url, timeoutMs)) as NewsletterCountResponse
 }
 
 export async function fetchNewsletterCountSent(
@@ -83,6 +86,44 @@ export async function fetchNewsletterCountSent(
 ): Promise<number> {
   const json = await fetchNewsletterCountPayload(baseUrl, timeoutMs)
   return safeNumber(json.count_sent)
+}
+
+type GradimentoEnvelope = {
+  success?: boolean
+  data?: {
+    responses?: number
+    total_votes?: number
+    average?: number
+    rate?: number
+    target_rate?: number
+    target_achieved?: boolean
+  } | null
+}
+
+/** Survey gradimento newsletter. `rate` è già in percentuale (es. 83.48). */
+export async function fetchNewsletterGradimento(
+  baseUrl: string,
+  timeoutMs = 15000,
+): Promise<NewsletterGradimento | null> {
+  const url = `${baseUrl}/api/v1/newsletter/gradimento`
+  try {
+    const json = (await fetchDataApiJson(url, timeoutMs)) as GradimentoEnvelope | GradimentoEnvelope['data']
+    const data =
+      json && typeof json === 'object' && 'data' in json && json.data && typeof json.data === 'object'
+        ? json.data
+        : (json as GradimentoEnvelope['data'])
+    if (!data || typeof data !== 'object' || data.rate == null) return null
+    return {
+      responses: safeNumber(data.responses),
+      totalVotes: safeNumber(data.total_votes),
+      average: safeNumber(data.average),
+      rate: safeNumber(data.rate),
+      targetRate: safeNumber(data.target_rate) || 70,
+      targetAchieved: Boolean(data.target_achieved),
+    }
+  } catch {
+    return null
+  }
 }
 
 /**

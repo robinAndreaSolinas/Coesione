@@ -1,3 +1,5 @@
+import { fetchDataApiJson } from './dataApi.js'
+
 declare const fetch: (
   url: string,
   options?: {
@@ -39,13 +41,7 @@ function safeNumber(value: unknown): number {
 }
 
 export async function fetchJson<T>(baseUrl: string, pathWithQuery: string): Promise<T> {
-  const url = `${baseUrl}${pathWithQuery}`
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`Data API error: ${res.status} ${res.statusText}`)
-  }
-  const data = await res.json()
-  return data as T
+  return (await fetchDataApiJson(`${baseUrl}${pathWithQuery}`)) as T
 }
 
 export function aggregatesFromQuizPayload(data: SondaggiQuizPayload | null | undefined): SondaggiAggregates {

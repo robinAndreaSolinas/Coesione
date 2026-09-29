@@ -1,4 +1,5 @@
 import { DATA_API_BASE_URL } from '../config.js'
+import { fetchDataApiJson } from './dataApi.js'
 
 declare const fetch: (
   url: string,
@@ -52,31 +53,20 @@ export async function fetchSiteStatsCount(
   baseUrl: string = DATA_API_BASE_URL,
   timeoutMs = 15000,
 ): Promise<SiteCountAggregates> {
-  const url = `${baseUrl}/api/v1/site/stats/count`
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const res = await fetch(url, { signal: controller.signal })
-    if (!res.ok) {
-      throw new Error(`Data API error: ${res.status} ${res.statusText}`)
-    }
-    const json = await res.json()
-    const data = unwrapApiPayload<SiteStatsCountData>(json)
-    const articlesDigitalCount = safeNumber(data?.total_count_url)
-    const articlesPrintedCount = 0
-    const articlesPublishedCount = articlesPrintedCount + articlesDigitalCount
-    const totalPageview = safeNumber(data?.total_pageview)
-    const avgPageviewsPerArticle =
-      articlesPublishedCount > 0 ? totalPageview / articlesPublishedCount : 0
-    return {
-      totalCountUrl: articlesDigitalCount,
-      totalPageview,
-      avgPageviewsPerArticle,
-      articlesDigitalCount,
-      articlesPrintedCount,
-      articlesPublishedCount,
-    }
-  } finally {
-    clearTimeout(timeout)
+  const json = await fetchDataApiJson(`${baseUrl}/api/v1/site/stats/count`, timeoutMs)
+  const data = unwrapApiPayload<SiteStatsCountData>(json)
+  const articlesDigitalCount = safeNumber(data?.total_count_url)
+  const articlesPrintedCount = 0
+  const articlesPublishedCount = articlesPrintedCount + articlesDigitalCount
+  const totalPageview = safeNumber(data?.total_pageview)
+  const avgPageviewsPerArticle =
+    articlesPublishedCount > 0 ? totalPageview / articlesPublishedCount : 0
+  return {
+    totalCountUrl: articlesDigitalCount,
+    totalPageview,
+    avgPageviewsPerArticle,
+    articlesDigitalCount,
+    articlesPrintedCount,
+    articlesPublishedCount,
   }
 }

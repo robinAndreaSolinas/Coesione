@@ -1,4 +1,5 @@
 import { DATA_API_BASE_URL } from '../config.js'
+import { fetchDataApiJson } from './dataApi.js'
 
 export type SocialPostEntry = {
   reach?: number
@@ -226,24 +227,14 @@ export function summaryFromPlatforms(platformPoints: SocialPlatformPoint[]): Soc
 }
 
 async function fetchDataApi(pathWithQuery: string, timeoutMs: number): Promise<unknown> {
-  const url = `${DATA_API_BASE_URL}${pathWithQuery}`
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const res = await fetch(url, { signal: controller.signal })
-    if (!res.ok) {
-      throw new Error(`Data API error: ${res.status} ${res.statusText}`)
-    }
-    return await res.json()
-  } finally {
-    clearTimeout(timeout)
-  }
+  return fetchDataApiJson(`${DATA_API_BASE_URL}${pathWithQuery}`, timeoutMs)
 }
 
 async function fetchDataApiSafe(pathWithQuery: string, timeoutMs: number): Promise<unknown | null> {
   try {
     return await fetchDataApi(pathWithQuery, timeoutMs)
-  } catch {
+  } catch (error) {
+    console.error(`Data API social fallita ${pathWithQuery}:`, error instanceof Error ? error.message : error)
     return null
   }
 }

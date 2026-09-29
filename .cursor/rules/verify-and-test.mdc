@@ -5,6 +5,14 @@ alwaysApply: true
 
 # Verifica e test obbligatori
 
+Prima di ogni modifica al codice, in questo ordine. Non saltare nessuno dei tre passi.
+
+1. **Test prima** — esegui i controlli rilevanti sullo stato attuale (typecheck dei file che toccherai; se il server è su, `curl` degli endpoint coinvolti). Annota cosa passa e cosa è già rotto per cause preesistenti.
+2. **Modifica** — applica solo la modifica richiesta.
+3. **Test dopo** — riesegui gli stessi controlli, più quelli della checklist sotto. Tutto ciò che era verde prima deve restare verde. I controlli della modifica devono passare. Se qualcosa fallisce, correggi nello stesso task e ritesta. Non chiudere con test rossi.
+
+Non esiste uno script `npm test`. I test sono typecheck, avvio server, health e gli endpoint toccati.
+
 Prima di chiudere qualsiasi modifica:
 
 1. **Non lasciare il progetto rotto** — se introduci errori, correggili nello stesso task.

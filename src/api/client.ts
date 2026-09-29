@@ -38,6 +38,9 @@ export interface NewsletterMetrics {
   subscribersTotal: number
   subscribersActive: number
   sentTotal: number
+  /** Gradimento survey, già in percentuale (es. 83.5). Null se API assente. */
+  feedbackPositiveRate: number | null
+  feedbackResponses: number
 }
 
 export interface NewsletterDailyPoint {
